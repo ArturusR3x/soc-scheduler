@@ -1,11 +1,14 @@
 -- Members table
-CREATE TABLE members (
+CREATE TABLE IF NOT EXISTS members (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(100) UNIQUE NOT NULL
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  "group" VARCHAR(20),
+  password VARCHAR(100)
 );
 
--- Shift schedule table
-CREATE TABLE shifts (
+-- Shifts table
+CREATE TABLE IF NOT EXISTS shifts (
   id SERIAL PRIMARY KEY,
   member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
   shift_date DATE NOT NULL,
@@ -14,26 +17,23 @@ CREATE TABLE shifts (
 );
 
 -- Notes table
-CREATE TABLE notes (
+CREATE TABLE IF NOT EXISTS notes (
   id SERIAL PRIMARY KEY,
-  author_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
-  client VARCHAR(100),
+  member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+  shift_date DATE NOT NULL,
   shift_type INTEGER,
-  event_name VARCHAR(200),
-  src_ip VARCHAR(50),
-  dst_ip VARCHAR(50),
-  hostname VARCHAR(100),
-  description TEXT,
-  action TEXT,
   note TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Replies table (for note replies)
-CREATE TABLE replies (
+-- Optional: Replies to notes
+CREATE TABLE IF NOT EXISTS replies (
   id SERIAL PRIMARY KEY,
   note_id INTEGER REFERENCES notes(id) ON DELETE CASCADE,
-  author_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+  member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+  message TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
   shift_type INTEGER,
   message TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

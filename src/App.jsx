@@ -1,8 +1,7 @@
 import { useState } from "react";
-import MemberList from "./components/MemberList";
 import DatePicker from "./components/DatePicker";
-import ScheduleTable from "./components/ScheduleTable";
 import MonthViewCalendar from "./components/MonthViewCalendar";
+import ScheduleTable from "./components/ScheduleTable";
 import Forum from "./components/Forum";
 import LoginPage from "./components/LoginPage";
 import React from "react";
@@ -16,7 +15,19 @@ export default function App() {
   const [clients, setClients] = useState([]); // <-- Add clients state
   const [user, setUser] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
-  const [profileGroup, setProfileGroup] = useState(user?.group || "");
+  const [profileGroup, setProfileGroup] = useState(""); // <-- ensure profileGroup is always defined
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveResult, setSaveResult] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState("");
+
+  // Logout: clear cookie
+  const handleLogout = () => {
+    document.cookie = "soc_user=; path=/; max-age=0";
+    setUser(null);
+  };
 
   // Fetch group from DB when profile is opened
   const handleOpenProfile = async () => {
@@ -34,9 +45,103 @@ export default function App() {
     }
   };
 
+  // Save schedule to DB
+  const handleSaveSchedule = async () => {
+    setSaving(true);
+    setSaveResult("");
+    try {
+      const res = await fetch("/api/save-month-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schedule, month: currentMonth })
+      });
+      if (res.ok) {
+        setSaveResult("Schedule saved successfully!");
+      } else {
+        setSaveResult("Failed to save schedule.");
+      }
+    } catch {
+      setSaveResult("Failed to save schedule.");
+    }
+    setSaving(false);
+    setTimeout(() => setShowSaveConfirm(false), 1200);
+  };
+
+  // Delete/reset schedule for the current month
+  const handleDeleteSchedule = async () => {
+    setDeleting(true);
+    setDeleteResult("");
+    try {
+      const res = await fetch("/api/delete-month-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month: currentMonth })
+      });
+      if (res.ok) {
+        setDeleteResult("Schedule deleted successfully!");
+        setSchedule({}); // Optionally clear frontend schedule
+      } else {
+        setDeleteResult("Failed to delete schedule.");
+      }
+    } catch {
+      setDeleteResult("Failed to delete schedule.");
+    }
+    setDeleting(false);
+    setTimeout(() => setShowDeleteConfirm(false), 1200);
+  };
+
+  // Fetch all members from DB on mount and use for scheduling
+  React.useEffect(() => {
+    async function fetchMembers() {
+      try {
+        const res = await fetch("/api/all-member-groups");
+        if (res.ok) {
+          const data = await res.json();
+          // Exclude members with group "BACKEND" (but not "BACKEND+")
+          setMembers(data.filter(m => m.group !== "BACKEND").map(m => m.name));
+        }
+      } catch {}
+    }
+    fetchMembers();
+  }, []);
+
+    // Fetch entire schedule (optional: for all months) on initial load
+  React.useEffect(() => {
+    async function fetchInitialSchedule() {
+      try {
+        const res = await fetch("/api/shifts");
+        if (res.ok) {
+          const data = await res.json();
+          setSchedule(data); // Set full schedule from backend
+        }
+      } catch (error) {
+        console.error("Failed to fetch initial schedule:", error);
+      }
+    }
+
+    if (user) {
+      fetchInitialSchedule();
+    }
+  }, [user]);
+  // Fetch schedule from DB when month changes, user logs in, or on refresh
+  React.useEffect(() => {
+    async function fetchSchedule() {
+      try {
+        const res = await fetch(`/api/get-month-schedule?month=${encodeURIComponent(currentMonth)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSchedule(data.schedule || {});
+        }
+      } catch {}
+    }
+    if (user) fetchSchedule();
+  }, [currentMonth, user]);
+
   if (!user) {
+    // Do not put any hooks (useEffect, useState, etc) after this return!
     return <LoginPage onLogin={setUser} />;
   }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 flex flex-col items-center py-8 px-2">
@@ -56,7 +161,7 @@ export default function App() {
             </button>
             <button
               className="px-3 py-1 rounded bg-gray-700 text-white hover:bg-blue-700 transition text-xs"
-              onClick={() => setUser(null)}
+              onClick={handleLogout}
             >
               Logout
             </button>
@@ -125,22 +230,104 @@ export default function App() {
         {page === "scheduler" ? (
           <>
             <h1 className="text-4xl font-extrabold text-center text-blue-300 drop-shadow mb-4 tracking-tight">SOC Shift Scheduler</h1>
-            <MemberList members={members} setMembers={setMembers} />
+            {/* MemberList removed */}
             {/* <DatePicker selectedDate={selectedDate} setSelectedDate={setSelectedDate} /> */}
+            <MonthViewCalendar
+              schedule={schedule}
+              members={members}
+              monthDate={currentMonth}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              setCurrentMonth={setCurrentMonth}
+              setSchedule={setSchedule}
+            />
             <ScheduleTable
               members={members}
               selectedDate={selectedDate}
               schedule={schedule}
               setSchedule={setSchedule}
             />
-            <MonthViewCalendar
-              schedule={schedule}
-              members={members}
-              monthDate={currentMonth}
-              setSelectedDate={setSelectedDate}
-              setCurrentMonth={setCurrentMonth}
-              setSchedule={setSchedule} // <-- add this
-            />
+            {/* Save and Delete buttons at bottom */}
+            <div className="flex justify-end gap-4 mt-8">
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow transition"
+                onClick={() => setShowSaveConfirm(true)}
+                disabled={saving}
+              >
+                Save Month Schedule
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold shadow transition"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={deleting}
+              >
+                Delete/Reset Month Schedule
+              </button>
+            </div>
+            {/* Confirmation popup for save */}
+            {showSaveConfirm && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl shadow-2xl p-8 min-w-[320px] max-w-xs flex flex-col items-center relative">
+                  <h2 className="text-xl font-bold text-green-700 mb-4">Confirm Save</h2>
+                  <div className="mb-4 text-gray-700 text-center">
+                    Are you sure you want to save the entire month's schedule to the database?
+                  </div>
+                  {saveResult && (
+                    <div className={`mb-2 font-semibold ${saveResult.includes("success") ? "text-green-600" : "text-red-600"}`}>
+                      {saveResult}
+                    </div>
+                  )}
+                  <div className="flex gap-4 mt-2">
+                    <button
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded font-bold"
+                      onClick={handleSaveSchedule}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Confirm"}
+                    </button>
+                    <button
+                      className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-1 rounded font-bold"
+                      onClick={() => setShowSaveConfirm(false)}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Confirmation popup for delete/reset */}
+            {showDeleteConfirm && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl shadow-2xl p-8 min-w-[320px] max-w-xs flex flex-col items-center relative">
+                  <h2 className="text-xl font-bold text-red-700 mb-4">Confirm Delete/Reset</h2>
+                  <div className="mb-4 text-gray-700 text-center">
+                    Are you sure you want to delete/reset the entire month's schedule from the database?
+                  </div>
+                  {deleteResult && (
+                    <div className={`mb-2 font-semibold ${deleteResult.includes("success") ? "text-green-600" : "text-red-600"}`}>
+                      {deleteResult}
+                    </div>
+                  )}
+                  <div className="flex gap-4 mt-2">
+                    <button
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded font-bold"
+                      onClick={handleDeleteSchedule}
+                      disabled={deleting}
+                    >
+                      {deleting ? "Deleting..." : "Confirm"}
+                    </button>
+                    <button
+                      className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-1 rounded font-bold"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={deleting}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <Forum members={members} clients={clients} setClients={setClients} />

@@ -192,3 +192,34 @@ pg_ctl status
 
 - Replace the path with your actual PostgreSQL data directory.
 - You can find your data directory in your PostgreSQL installation or by checking your `postgresql.conf` file.
+
+## How to Make Sure Your Code Is Connected to Your Database
+
+1. **Test a simple query in your backend code:**
+   ```js
+   import { Pool } from 'pg';
+   const pool = new Pool({
+     connectionString: 'postgresql://soc_user:admin123@localhost:5432/soc_scheduler'
+   });
+
+   pool.query('SELECT 1 AS test', (err, res) => {
+     if (err) {
+       console.error('Database connection failed:', err);
+     } else {
+       console.log('Database connection successful:', res.rows);
+     }
+   });
+   ```
+
+2. **Check for errors in your backend terminal:**
+   - If you see "Database connection successful", your code is connected.
+   - If you see an error, check your connection string, credentials, and that PostgreSQL is running.
+
+3. **Try fetching real data:**
+   - Use an endpoint like `/api/member-by-email` and check if it returns actual data from your database.
+
+4. **Check PostgreSQL logs:**
+   - You can see connection attempts in the PostgreSQL log files.
+
+5. **Check with psql:**
+   - Run `psql -U soc_user -d soc_scheduler` and try a query directly.

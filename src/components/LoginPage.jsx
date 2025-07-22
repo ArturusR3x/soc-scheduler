@@ -1,52 +1,103 @@
-import React, { useState } from "react";
-
-const USERS = [
-  { name: "Basuki Rachmad", email: "Basuki.rachmad@deltadatamandiri.com", username: "Basuki", password: "Basuki123" },
-  { name: "Lexiandy Kuswandana", email: "lexiandy.kuswandana@deltadatamandiri.com", username: "Lexiandy", password: "Lexiandy123" },
-  { name: "Hansel Daniel Susanto", email: "hansel.susanto@deltadatamandiri.com", username: "Hansel", password: "Hansel123" },
-  { name: "Febrian Sulistyono", email: "febrian.sulistyono@deltadatamandiri.com", username: "Febrian", password: "Febrian123" },
-  { name: "Ni Made Meliana Listyawati", email: "meliana.listyawati@deltadatamandiri.com", username: "Meliana", password: "Meliana123" },
-  { name: "Zachrun Puady Thahir", email: "zachrun.thahir@deltadatamandiri.com", username: "Zachrun", password: "Zachrun123" },
-  { name: "Arieca Irfansyah Putra", email: "arieca.putra@deltadatamandiri.com", username: "Arieca", password: "Arieca123" },
-  { name: "Hafidz Jaelani", email: "hafidz.jaelani@deltadatamandiri.com", username: "Hafidz", password: "Hafidz123" },
-  { name: "Arthur Jeremy", email: "arthur.jeremy@deltadatamandiri.com", username: "Arthur", password: "Arthur123" },
-  { name: "Andika Kusriyanto", email: "andika.kusriyanto@deltadatamandiri.com", username: "Andika", password: "Andika123" },
-  { name: "Nico Juanto", email: "nico.juanto@deltadatamandiri.com", username: "Nico", password: "Nico123" },
-];
-
-async function fetchUserGroup(fullName) {
-  try {
-    const res = await fetch(`/api/get-group?username=${encodeURIComponent(fullName)}`);
-    if (res.ok) {
-      const data = await res.json();
-      return data.group || "";
-    }
-  } catch (err) {
-    // Ignore fetch errors, fallback to empty group
-  }
-  return "";
-}
+import React, { useState, useEffect } from "react";
 
 export default function LoginPage({ onLogin }) {
-  const [selected, setSelected] = useState(USERS[0].username);
+  const [step, setStep] = useState(1); // 1: enter email, 2: set password, 3: enter password
+  const [email, setEmail] = useState("");
+  const [user, setUser] = useState(null);
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Check for cookie on mount
+  useEffect(() => {
+    const cookie = document.cookie.split('; ').find(row => row.startsWith('soc_user='));
+    if (cookie) {
+      try {
+        const user = JSON.parse(decodeURIComponent(cookie.split('=')[1]));
+        if (user && user.email) {
+          onLogin(user);
+        }
+      } catch {}
+    }
+  }, [onLogin]);
+
+  // Step 1: Enter email and check user
+  const handleEmailSubmit = async e => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    // Validate email format before checking DB
+    const emailTrimmed = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTrimmed)) {
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Check if email exists in DB (case-insensitive, backend handles it)
+      const res = await fetch(`/api/member-by-email?email=${encodeURIComponent(emailTrimmed)}`);
+      if (!res.ok) {
+        setError("Email not found in database. Please verify your email address.");
+        setLoading(false);
+        return;
+      }
+      // Email exists, proceed to password step
+      const data = await res.json();
+      setUser(data);
+      if (!data.password) {
+        setStep(2); // No password, ask to set new password
+      } else {
+        setStep(3); // Has password, ask for password
+      }
+    } catch {
+      setError("Email not found in database. Please contact your administrator.");
+    }
+    setLoading(false);
+  };
+
+  // Step 2: Set new password
+  const handleSetPassword = async e => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    if (!newPassword.trim() || newPassword.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch("/api/set-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, password: newPassword })
+      });
+      if (!res.ok) throw new Error("Failed to set password");
+      // After setting password, fetch user again to get updated password field
+      const userRes = await fetch(`/api/member-by-email?email=${encodeURIComponent(user.email)}`);
+      const updatedUser = userRes.ok ? await userRes.json() : { ...user, password: newPassword };
+      setUser(updatedUser);
+      setStep(3);
+      setPassword(""); // clear password field for next step
+    } catch {
+      setError("Failed to set password.");
+    }
+    setLoading(false);
+  };
+
+  // Step 3: Enter password and login
   const handleLogin = async e => {
     e.preventDefault();
-    const user = USERS.find(u => u.username === selected);
-    if (user && password === user.password) {
-      setError("");
-      setLoading(true);
-      let group = "";
-      try {
-        group = await fetchUserGroup(user.name); // <-- send full name here
-      } catch {
-        group = "";
-      }
+    setError("");
+    setLoading(true);
+    if (password === user.password) {
       setLoading(false);
-      onLogin({ ...user, group });
+      // Save user info in cookie for future logins
+      document.cookie = `soc_user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=604800`; // 7 days
+      onLogin(user);
     } else {
       setError("Invalid password. Please try again.");
       setLoading(false);
@@ -57,41 +108,82 @@ export default function LoginPage({ onLogin }) {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900">
       <div className="bg-white/10 rounded-2xl shadow-2xl p-8 space-y-6 w-full max-w-md">
         <h1 className="text-3xl font-extrabold text-center text-blue-300 mb-4">SOC Scheduler Login</h1>
-        <form className="space-y-4" onSubmit={handleLogin}>
-          <div>
-            <label className="block text-blue-200 font-semibold mb-1">User</label>
-            <select
-              className="w-full rounded-lg px-3 py-2 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={selected}
-              onChange={e => setSelected(e.target.value)}
+        {step === 1 && (
+          <form className="space-y-4" onSubmit={handleEmailSubmit}>
+            <div>
+              <label className="block text-blue-200 font-semibold mb-1">Email</label>
+              <input
+                type="email"
+                className="w-full rounded-lg px-3 py-2 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                autoComplete="email"
+                required
+              />
+            </div>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+              disabled={loading}
             >
-              {USERS.map(u => (
-                <option key={u.username} value={u.username}>
-                  {u.name} ({u.email})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-blue-200 font-semibold mb-1">Password</label>
-            <input
-              type="password"
-              className="w-full rounded-lg px-3 py-2 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Enter password"
-              autoComplete="current-password"
-            />
-          </div>
-          {error && <div className="text-red-400 text-sm">{error}</div>}
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition"
-            disabled={loading}
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
+              {loading ? "Checking..." : "Next"}
+            </button>
+          </form>
+        )}
+        {step === 2 && (
+          <form className="space-y-4" onSubmit={handleSetPassword}>
+            <div>
+              <label className="block text-blue-200 font-semibold mb-1">Set New Password</label>
+              <input
+                type="password"
+                className="w-full rounded-lg px-3 py-2 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Create password"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            {/* Show password requirements */}
+            <div className="text-xs text-blue-200 mb-2">
+              Password must be at least 6 characters.
+            </div>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+              disabled={loading}
+            >
+              {loading ? "Saving..." : "Save Password"}
+            </button>
+          </form>
+        )}
+        {step === 3 && (
+          <form className="space-y-4" onSubmit={handleLogin}>
+            <div>
+              <label className="block text-blue-200 font-semibold mb-1">Password</label>
+              <input
+                type="password"
+                className="w-full rounded-lg px-3 py-2 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+              disabled={loading}
+            >
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

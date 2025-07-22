@@ -10,7 +10,16 @@ import {
 } from "date-fns";
 import { format as formatDate, subMonths, addMonths } from "date-fns";
 
-export default function MonthViewCalendar({ schedule, members, monthDate, setSelectedDate, setCurrentMonth, setSchedule }) {
+// Make sure selectedDate is passed as a prop to MonthViewCalendar
+export default function MonthViewCalendar({
+  schedule,
+  members,
+  monthDate,
+  setSelectedDate,
+  setCurrentMonth,
+  setSchedule,
+  selectedDate, // <-- add this prop
+}) {
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 0 });
@@ -48,7 +57,17 @@ export default function MonthViewCalendar({ schedule, members, monthDate, setSel
 
   // Fair random assignment of shifts for the month with rules and varied shifts
   const randomizeShifts = useCallback(() => {
-    if (!members.length) return;
+    // Exclude members with group "BACKEND" (but not "BACKEND+")
+    const filteredMembers = members.filter(m => {
+      const group = (typeof m === "object" && m.group) ? m.group : null;
+      // If m is just a name, get group from schedule or skip
+      if (!group && typeof m === "string" && schedule) {
+        // Try to get group from schedule or skip
+        return true; // fallback: allow, since App.jsx already filters
+      }
+      return group !== "BACKEND";
+    });
+    if (!filteredMembers.length) return;
     const days = getMonthDays();
     const shifts = [1, 2, 3];
     const perShift = 2; // 2 people per shift per day
@@ -57,7 +76,7 @@ export default function MonthViewCalendar({ schedule, members, monthDate, setSel
     const lastShift = {};
     // Track how many times each member gets each shift
     const shiftCounts = {};
-    members.forEach(m => {
+    filteredMembers.forEach(m => {
       lastShift[m] = null;
       shiftCounts[m] = { 1: 0, 2: 0, 3: 0, off: 0 };
     });
@@ -68,7 +87,7 @@ export default function MonthViewCalendar({ schedule, members, monthDate, setSel
       const prevDay = addDays(firstDay, -1);
       const prevKey = format(prevDay, "yyyy-MM-dd");
       if (schedule[prevKey]) {
-        members.forEach(m => {
+        filteredMembers.forEach(m => {
           const prevShift = schedule[prevKey][m];
           if (prevShift === 1 || prevShift === 2 || prevShift === 3) {
             lastShift[m] = prevShift;
@@ -89,7 +108,7 @@ export default function MonthViewCalendar({ schedule, members, monthDate, setSel
 
       // For each shift, pick up to 2 members
       let available = {};
-      members.forEach(m => {
+      filteredMembers.forEach(m => {
         // Rule 1: after shift 2, cannot get shift 1 next day
         if (lastShift[m] === 2) {
           available[m] = [2, 3, "off"];
@@ -106,26 +125,26 @@ export default function MonthViewCalendar({ schedule, members, monthDate, setSel
 
       // Try to vary shifts: prefer not to assign the same shift as yesterday
       // 1. Assign shift 1 (prefer members whose last shift was not 1)
-      let shift1Candidates = members.filter(m => available[m].includes(1));
+      let shift1Candidates = filteredMembers.filter(m => available[m].includes(1));
       let shift1Pref = shuffle(shift1Candidates.filter(m => lastShift[m] !== 1));
       let shift1Fill = shuffle(shift1Candidates.filter(m => lastShift[m] === 1));
       let shift1Assigned = [...shift1Pref, ...shift1Fill].slice(0, perShift);
 
       // 2. Assign shift 2 (prefer members whose last shift was not 2, and not already assigned)
-      let shift2Candidates = members.filter(m => available[m].includes(2) && !shift1Assigned.includes(m));
+      let shift2Candidates = filteredMembers.filter(m => available[m].includes(2) && !shift1Assigned.includes(m));
       let shift2Pref = shuffle(shift2Candidates.filter(m => lastShift[m] !== 2));
       let shift2Fill = shuffle(shift2Candidates.filter(m => lastShift[m] === 2));
       let shift2Assigned = [...shift2Pref, ...shift2Fill].slice(0, perShift);
 
       // 3. Assign shift 3 (prefer members whose last shift was not 3, and not already assigned)
-      let shift3Candidates = members.filter(m => available[m].includes(3) && !shift1Assigned.includes(m) && !shift2Assigned.includes(m));
+      let shift3Candidates = filteredMembers.filter(m => available[m].includes(3) && !shift1Assigned.includes(m) && !shift2Assigned.includes(m));
       let shift3Pref = shuffle(shift3Candidates.filter(m => lastShift[m] !== 3));
       let shift3Fill = shuffle(shift3Candidates.filter(m => lastShift[m] === 3));
       let shift3Assigned = [...shift3Pref, ...shift3Fill].slice(0, perShift);
 
       // 4. The rest are off
       let assigned = [...shift1Assigned, ...shift2Assigned, ...shift3Assigned];
-      let offAssigned = members.filter(m => !assigned.includes(m));
+      let offAssigned = filteredMembers.filter(m => !assigned.includes(m));
 
       // Fill schedule for the day
       shift1Assigned.forEach(m => {
@@ -210,10 +229,21 @@ export default function MonthViewCalendar({ schedule, members, monthDate, setSel
               const shifts = schedule[dateKey] || {};
               const isLastCol = colIdx % 7 === 6;
               const borderClass = isLastCol ? "" : "border-r";
+              // Defensive: only highlight if selectedDate is a valid Date
+              let isSelected = false;
+              if (
+                selectedDate &&
+                selectedDate instanceof Date &&
+                !isNaN(selectedDate.getTime()) &&
+                format(day, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
+              ) {
+                isSelected = true;
+              }
               calendarCells.push(
                 <div
                   key={dateKey}
                   className={`h-32 p-2 cursor-pointer ${borderClass} border-t border-gray-600 text-xs relative overflow-hidden rounded-lg transition-shadow duration-200
+                    ${isSelected ? "ring-4 ring-blue-500 ring-offset-2 z-10" : ""}
                     ${!isSameMonth(day, monthStart)
                       ? "bg-gray-800 text-gray-500"
                       : format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
