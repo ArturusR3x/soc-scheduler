@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function LoginPage({ onLogin }) {
   const [step, setStep] = useState(1); // 1: enter email, 2: set password, 3: enter password
@@ -104,6 +105,27 @@ export default function LoginPage({ onLogin }) {
     }
   };
 
+  // Google login success handler
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      // Send credential to backend for verification and user lookup/creation
+      const res = await fetch("/api/google-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+      if (res.ok) {
+        const user = await res.json();
+        document.cookie = `soc_user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=604800`;
+        onLogin(user);
+      } else {
+        setError("Google login failed or not authorized.");
+      }
+    } catch {
+      setError("Google login failed.");
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900">
       <div className="bg-white/10 rounded-2xl shadow-2xl p-8 space-y-6 w-full max-w-md">
@@ -184,6 +206,14 @@ export default function LoginPage({ onLogin }) {
             </button>
           </form>
         )}
+        <div className="flex flex-col items-center gap-2 mt-4">
+          <span className="text-gray-300 text-xs">or</span>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError("Google login failed.")}
+            useOneTap
+          />
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import express from 'express';
 import { Pool } from 'pg';
+import fetch from 'node-fetch'; // Add at the top if not already imported
 
 const app = express();
 app.use(express.json());
@@ -273,6 +274,37 @@ app.get('/api/get-month-schedule', async (req, res) => {
   } catch (err) {
     console.error("Error fetching month schedule:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// /api/google-login
+app.post('/api/google-login', async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) return res.status(400).json({ error: "Missing credential" });
+
+  try {
+    // Validate token with Google
+    const googleRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
+    );
+    const googleData = await googleRes.json();
+
+    if (!googleData.email_verified) {
+      return res.status(401).json({ error: "Google email not verified" });
+    }
+
+    // Find user in your DB by email
+    const userRes = await pool.query('SELECT * FROM members WHERE LOWER(email) = LOWER($1)', [googleData.email]);
+    if (userRes.rows.length === 0) {
+      // Optionally: create user if not found, or reject
+      return res.status(403).json({ error: "User not authorized" });
+    }
+    // Return user info (do not include password)
+    const user = userRes.rows[0];
+    delete user.password;
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Google login failed" });
   }
 });
 
