@@ -5,6 +5,9 @@ import ScheduleTable from "./components/ScheduleTable";
 import Forum from "./components/Forum";
 import LoginPage from "./components/LoginPage";
 import React from "react";
+import "./App.css"; // Ensure you have your styles imported
+import ShiftSchedule from "./components/ShiftSchedule";
+
 // Add this somewhere in your JSX layout (below the shift editor or as a tab)
 export default function App() {
   const [members, setMembers] = useState([]);
@@ -50,6 +53,8 @@ export default function App() {
     setSaving(true);
     setSaveResult("");
     try {
+      console.log( "Saving schedule for month:", currentMonth);
+      console.log("Schedule data:", schedule);
       const res = await fetch("/api/save-month-schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,7 +102,6 @@ export default function App() {
         const res = await fetch("/api/all-member-groups");
         if (res.ok) {
           const data = await res.json();
-          // Exclude members with group "BACKEND" (but not "BACKEND+")
           setMembers(data.filter(m => m.group !== "BACKEND").map(m => m.name));
         }
       } catch {}
@@ -105,42 +109,52 @@ export default function App() {
     fetchMembers();
   }, []);
 
-    // Fetch entire schedule (optional: for all months) on initial load
+  // Fetch all shifts (calendar with members' shifts) from DB on login/refresh/page load
   React.useEffect(() => {
-    async function fetchInitialSchedule() {
+    async function fetchAllShifts() {
       try {
-        const res = await fetch("/api/shifts");
+        const res = await fetch("/api/get-schedule");
         if (res.ok) {
           const data = await res.json();
-          setSchedule(data); // Set full schedule from backend
+          const normalizedSchedule = {};
+          Object.entries(data.schedule || data).forEach(([key, value]) => {
+            const match = key.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (match) {
+              const [_, d, m, y] = match;
+              const iso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+              normalizedSchedule[iso] = value;
+            } else {
+              normalizedSchedule[key] = value;
+            }
+          });
+          setSchedule(normalizedSchedule);
         }
       } catch (error) {
-        console.error("Failed to fetch initial schedule:", error);
+        console.error("Failed to fetch all shifts:", error);
+        setSchedule({});
       }
     }
-
-    if (user) {
-      fetchInitialSchedule();
-    }
+    if (user) fetchAllShifts();
   }, [user]);
-  // Fetch schedule from DB when month changes, user logs in, or on refresh
-  React.useEffect(() => {
-    async function fetchSchedule() {
-      try {
-        const res = await fetch(`/api/get-month-schedule?month=${encodeURIComponent(currentMonth)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSchedule(data.schedule || {});
-        }
-      } catch {}
-    }
-    if (user) fetchSchedule();
-  }, [currentMonth, user]);
+
+  // Remove or comment out this effect to prevent overwriting the full schedule:
+  // React.useEffect(() => {
+  //   async function fetchSchedule() {
+  //     try {
+  //       const res = await fetch(`/api/get-month-schedule?month=${encodeURIComponent(currentMonth)}`);
+  //       if (res.ok) {
+  //         const data = await res.json();
+  //         setSchedule(data.schedule || {});
+  //       }
+  //     } catch {}
+  //   }
+  //   if (user) fetchSchedule();
+  // }, [currentMonth, user]);
 
   if (!user) {
-    // Do not put any hooks (useEffect, useState, etc) after this return!
     return <LoginPage onLogin={setUser} />;
   }
+<ShiftSchedule />
 
 
   return (
@@ -337,3 +351,5 @@ export default function App() {
     </div>
   );
 }
+ 
+

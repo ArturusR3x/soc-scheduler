@@ -1,9 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function Forum({ members, clients = [], setClients }) {
+export default function Forum({ members, clients = [], setClients, user, selectedDate, schedule }) {
   const [notes, setNotes] = useState([]);
-  const [author, setAuthor] = useState(members[0] || "");
-  const [shift, setShift] = useState("1");
   const [eventName, setEventName] = useState("");
   const [srcIP, setSrcIP] = useState("");
   const [dstIP, setDstIP] = useState("");
@@ -94,6 +92,26 @@ export default function Forum({ members, clients = [], setClients }) {
     } else {
       setNotes(notes => notes.filter(n => n.id !== id));
     }
+  };
+
+  // Helper to get current user and shift for the selected date
+  const getCurrentAuthor = () => (user && user.name) || ""; // Only use logged-in user
+  // Get the user's assigned shift for the selected date
+  const getUserShift = () => {
+    if (!user || !selectedDate || !schedule) return "1";
+    const dateKey = selectedDate.toISOString().split("T")[0];
+    const shiftsForDay = schedule[dateKey] || {};
+    return shiftsForDay[user.name] ? String(shiftsForDay[user.name]) : "1";
+  };
+  // Get the current shift (selected in the UI, e.g. from the calendar cell)
+  const getCurrentShift = () => {
+    // If you want to allow the user to select a shift, add a state for it.
+    // Otherwise, default to the user's shift for the selected date.
+    return getUserShift();
+  };
+  const getCurrentDate = () => {
+    if (!selectedDate) return new Date().toLocaleString();
+    return selectedDate.toLocaleString();
   };
 
   // Filtering logic for notes
@@ -371,21 +389,34 @@ export default function Forum({ members, clients = [], setClients }) {
       return;
     }
     setError("");
+    // Determine the user's shift for the selected date
+    const userShift = getUserShift();
+    // Determine the current shift (e.g. from calendar context, here we use userShift)
+    const currentShift = userShift;
+    // If you want to allow the user to select a shift, add a select and use that value for currentShift
+
+    // If the user is not in the current shift, add a note
+    let shiftNote = "";
+    if (userShift !== currentShift) {
+      shiftNote = `Note: This note was made by ${getCurrentAuthor()} (assigned to shift ${userShift}) during shift ${currentShift}.`;
+    }
+
     setNotes([
       ...notes,
       {
         id: Date.now(),
-        author,
-        shift,
+        author: getCurrentAuthor(),
+        shift: userShift,
         eventName,
         srcIP,
         dstIP,
         hostname,
         description,
         action,
-        note,
+        note: shiftNote ? (note ? note + "\n" + shiftNote : shiftNote) : note,
         client,
-        date: new Date().toLocaleString(),
+        date: getCurrentDate(),
+        shiftNote, // store the shift note for display if needed
         replies: [],
       },
     ]);
@@ -449,7 +480,6 @@ export default function Forum({ members, clients = [], setClients }) {
         </div>
       </div>
       <h2 className="text-2xl font-bold text-blue-200 mb-4">SOC Forum / Notes</h2>
-      {/* ...existing code... */}
       <div className="space-y-4">
         {filterNotes(notes).length === 0 && (
           <div className="text-gray-400 text-center">No notes found.</div>
@@ -468,25 +498,17 @@ export default function Forum({ members, clients = [], setClients }) {
       )}
       {showForm && (
         <div className="bg-gray-800 rounded-lg p-4 space-y-3 shadow">
-          <div className="flex gap-2">
-            <select
-              className="rounded px-2 py-1 bg-gray-900 text-white"
-              value={author}
-              onChange={e => setAuthor(e.target.value)}
-            >
-              {members.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-            <select
-              className="rounded px-2 py-1 bg-gray-900 text-white"
-              value={shift}
-              onChange={e => setShift(e.target.value)}
-            >
-              <option value="1">Shift 1</option>
-              <option value="2">Shift 2</option>
-              <option value="3">Shift 3</option>
-            </select>
+          {/* Remove author/shift selects, show as info */}
+          <div className="flex gap-2 items-center">
+            <span className="text-blue-300 font-semibold">
+              Author: {getCurrentAuthor()}
+            </span>
+            <span className="text-green-400 font-semibold">
+              Shift: {getCurrentShift()}
+            </span>
+            <span className="text-gray-400 font-semibold">
+              Date: {getCurrentDate()}
+            </span>
           </div>
           {/* Client select/add */}
           <div className="flex gap-2 items-center">

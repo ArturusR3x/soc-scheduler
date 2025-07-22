@@ -4,61 +4,58 @@ import DraggableMember from "./DraggableMember";
 export default function ScheduleTable({ members, selectedDate, schedule, setSchedule }) {
   const [dragOver, setDragOver] = useState({});
   const [memberGroups, setMemberGroups] = useState({});
-  const [allDbMembers, setAllDbMembers] = useState([]);
+  const [allDbMembers, setAllDbMembers] = useState([]); // <-- store all DB members
+
   const dateKey = selectedDate.toISOString().split("T")[0];
 
-  // Fetch all member names and groups from backend
+  // Fetch all member names from backend and use for unassigned
   useEffect(() => {
     async function fetchGroupsAndMembers() {
       try {
         const res = await fetch("/api/all-member-groups");
         if (res.ok) {
-          const data = await res.json();
+          const data = await res.json(); // [{ name, group }]
           const map = {};
           data.forEach(m => { map[m.name] = m.group; });
           setMemberGroups(map);
-          setAllDbMembers(data.map(m => m.name));
+          setAllDbMembers(data.map(m => m.name)); // <-- set all member names from DB
         }
       } catch {}
     }
     fetchGroupsAndMembers();
-  }, []);
+  }, [members]);
 
   // Fetch schedule for selectedDate from DB when selectedDate changes
-  useEffect(() => {
-    async function fetchDaySchedule() {
-      const dateKey = selectedDate.toISOString().split("T")[0];
-      try {
-        const res = await fetch(`/api/get-month-schedule?month=${encodeURIComponent(selectedDate)}`);
-        if (res.ok) {
-          const data = await res.json();
-          // Always update the selected date's schedule from DB
-          if (data.schedule && data.schedule[dateKey]) {
-            setSchedule(prev => ({
-              ...prev,
-              [dateKey]: data.schedule[dateKey]
-            }));
-          } else {
-            // If no schedule for this date, clear it
-            setSchedule(prev => {
-              const newSched = { ...prev };
-              delete newSched[dateKey];
-              return newSched;
-            });
-          }
-        }
-      } catch {}
-    }
-    fetchDaySchedule();
-  }, [selectedDate, setSchedule]);
+  // REMOVE or COMMENT OUT this effect to prevent overwriting the full schedule:
+  // useEffect(() => {
+  //   async function fetchDaySchedule() {
+  //     const dateKey = selectedDate.toISOString().split("T")[0];
+  //     try {
+  //       const res = await fetch(`/api/get-month-schedule?month=${encodeURIComponent(selectedDate)}`);
+  //       if (res.ok) {
+  //         const data = await res.json();
+  //         // Only update the selected date's schedule
+  //         if (data.schedule && data.schedule[dateKey]) {
+  //           setSchedule(prev => ({
+  //             ...prev,
+  //             [dateKey]: data.schedule[dateKey]
+  //           }));
+  //         }
+  //       }
+  //     } catch {}
+  //   }
+  //   fetchDaySchedule();
+  // }, [selectedDate, setSchedule]);
 
   // Group members by shift
   const shiftGroups = { 1: [], 2: [], 3: [], unassigned: [] };
+  // Remove .unassigned population here, only use for assigned shifts
   members.forEach(member => {
     const shift = schedule[dateKey]?.[member];
     if (shift === "1" || shift === 1) shiftGroups[1].push(member);
     else if (shift === "2" || shift === 2) shiftGroups[2].push(member);
     else if (shift === "3" || shift === 3) shiftGroups[3].push(member);
+    // Do NOT push to shiftGroups.unassigned here
   });
 
   // Unassigned: all DB members minus those assigned to a shift
@@ -147,4 +144,3 @@ export default function ScheduleTable({ members, selectedDate, schedule, setSche
     </div>
   );
 }
-

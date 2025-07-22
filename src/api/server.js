@@ -212,7 +212,36 @@ app.post('/api/delete-month-schedule', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.get('/api/get-schedule', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        s.shift_date, 
+        s.shift_type, 
+        m.name AS member_name
+      FROM shift_assignments sa
+      JOIN shifts s ON sa.shift_id = s.id
+      JOIN members m ON sa.member_id = m.id
+      ORDER BY s.shift_date, s.shift_type
+    `);
 
+    // Convert to { [date]: { [member]: shiftType } }
+    const schedule = {};
+    result.rows.forEach(row => {
+      // Convert to YYYY-MM-DD (remove time zone)
+      const dateKey = row.shift_date instanceof Date
+        ? row.shift_date.toLocaleDateString().split('T')[0]
+        : row.shift_date;
+      if (!schedule[dateKey]) schedule[dateKey] = {};
+      schedule[dateKey][row.member_name] = row.shift_type;
+    });
+
+    res.json({ schedule }); // This is correct for frontend usage
+  } catch (err) {
+    console.error("❌ Error fetching schedule:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 // /api/get-month-schedule
 app.get('/api/get-month-schedule', async (req, res) => {
   const { month } = req.query;
