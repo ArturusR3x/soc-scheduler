@@ -2,7 +2,7 @@ import express from 'express';
 import { Pool } from 'pg';
 import fetch from 'node-fetch'; // Add at the top if not already imported
 import cors from 'cors'; // <-- Add this line
-
+import { compareAsc, format } from "date-fns";
 const app = express();
 app.use(express.json());
 
@@ -238,7 +238,7 @@ app.get('/api/get-schedule', async (req, res) => {
     result.rows.forEach(row => {
       // Format as M/D/YYYY (month/day/year, no leading zeros)
       const dateObj = new Date(row.shift_date);
-      const dateKey = dateObj.toLocaleDateString('en-US');
+      const dateKey = format(dateObj, "M/d/yyyy");console.log(dateKey);
       if (!schedule[dateKey]) schedule[dateKey] = {};
       schedule[dateKey][row.member_name] = row.shift_type;
     });
