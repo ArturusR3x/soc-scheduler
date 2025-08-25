@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import DraggableMember from "./DraggableMember";
 
+// API base URL
+const API_BASE = "http://192.168.1.229:4000";
+
 export default function ScheduleTable({ members, selectedDate, schedule, setSchedule }) {
   const [dragOver, setDragOver] = useState({});
   const [memberGroups, setMemberGroups] = useState({});
@@ -12,7 +15,7 @@ export default function ScheduleTable({ members, selectedDate, schedule, setSche
   useEffect(() => {
     async function fetchGroupsAndMembers() {
       try {
-        const res = await fetch("/api/all-member-groups");
+        const res = await fetch(`${API_BASE}/api/all-member-groups`);
         if (res.ok) {
           const data = await res.json(); // [{ name, group }]
           const map = {};
@@ -31,7 +34,7 @@ export default function ScheduleTable({ members, selectedDate, schedule, setSche
   //   async function fetchDaySchedule() {
   //     const dateKey = selectedDate.toISOString().split("T")[0];
   //     try {
-  //       const res = await fetch(`/api/get-month-schedule?month=${encodeURIComponent(selectedDate)}`);
+  //       const res = await fetch(`${API_BASE}/api/get-month-schedule?month=${encodeURIComponent(selectedDate)}`);
   //       if (res.ok) {
   //         const data = await res.json();
   //         // Only update the selected date's schedule

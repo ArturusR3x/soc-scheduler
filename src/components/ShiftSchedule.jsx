@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 
+// API base URL
+const API_BASE = "http://192.168.1.229:4000";
+
 export default function ShiftSchedule() {
   const [scheduleData, setScheduleData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/get-schedule") // Assumes your Express route is already serving this
+    fetch(`${API_BASE}/api/get-schedule`) // Assumes your Express route is already serving this
       .then(res => res.json())
       .then(data => {
         setScheduleData(data);

@@ -8,6 +8,9 @@ import React from "react";
 import "./App.css"; // Ensure you have your styles imported
 import ShiftSchedule from "./components/ShiftSchedule";
 
+// API base URL
+const API_BASE = "http://192.168.1.229:4000";
+
 // Add this somewhere in your JSX layout (below the shift editor or as a tab)
 export default function App() {
   const [members, setMembers] = useState([]);
@@ -36,7 +39,7 @@ export default function App() {
   const handleOpenProfile = async () => {
     setShowProfile(true);
     try {
-      const res = await fetch(`/api/get-group?name=${encodeURIComponent(user.name)}`); // <-- use 'name'
+      const res = await fetch(`${API_BASE}/api/get-group?name=${encodeURIComponent(user.name)}`); // <-- use 'name'
       if (res.ok) {
         const data = await res.json();
         setProfileGroup(data.group || "");
