@@ -2,7 +2,6 @@ import express from 'express';
 import { Pool } from 'pg';
 import fetch from 'node-fetch'; // Add at the top if not already imported
 import cors from 'cors'; // <-- Add this line
-import { format as formatDate } from 'date-fns'; // Add at the top if not present
 
 const app = express();
 app.use(express.json());
@@ -237,10 +236,10 @@ app.get('/api/get-schedule', async (req, res) => {
     // Convert to { [date]: { [member]: shiftType } }
     const schedule = {};
     result.rows.forEach(row => {
-      // Convert to MM-DD-YYYY (remove time zone)
+      // Convert to YYYY-MM-DD (remove time zone)
       const dateKey = row.shift_date instanceof Date
-        ? formatDate(row.shift_date, 'MM-dd-yyyy')
-        : row.shift_date; 
+        ? row.shift_date.toLocaleDateString().split('T')[0]
+        : row.shift_date;
       if (!schedule[dateKey]) schedule[dateKey] = {};
       schedule[dateKey][row.member_name] = row.shift_type;
     });
