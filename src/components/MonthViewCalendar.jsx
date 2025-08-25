@@ -224,7 +224,8 @@ export default function MonthViewCalendar({
             let day = startDate;
             let colIdx = 0;
             while (day <= endDate) {
-              const dateKey = format(day, "yyyy-MM-dd");
+              // Use M/d/yyyy format to match server keys
+              const dateKey = formatDate(day, "M/d/yyyy");
               const formattedDate = format(day, "d");
               const shifts = schedule[dateKey] || {};
               const isLastCol = colIdx % 7 === 6;
