@@ -80,7 +80,7 @@ export default function App() {
     setDeleting(true);
     setDeleteResult("");
     try {
-      const res = await fetch("/api/delete-month-schedule", {
+      const res = await fetch(`${API_BASE}/api/delete-month-schedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ month: currentMonth })
@@ -102,7 +102,7 @@ export default function App() {
   React.useEffect(() => {
     async function fetchMembers() {
       try {
-        const res = await fetch("/api/all-member-groups");
+        const res = await fetch(`${API_BASE}/api/all-member-groups`);
         if (res.ok) {
           const data = await res.json();
           setMembers(data.filter(m => m.group !== "BACKEND").map(m => m.name));
@@ -116,7 +116,7 @@ export default function App() {
   React.useEffect(() => {
     async function fetchAllShifts() {
       try {
-        const res = await fetch("/api/get-schedule");
+        const res = await fetch(`${API_BASE}/api/get-schedule`);
         if (res.ok) {
           const data = await res.json();
           const normalizedSchedule = {};
