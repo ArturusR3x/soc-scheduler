@@ -58,7 +58,7 @@ export default function App() {
     try {
       console.log( "Saving schedule for month:", currentMonth);
       console.log("Schedule data:", schedule);
-      const res = await fetch("/api/save-month-schedule", {
+      const res = await fetch(`${API_BASE}/api/save-month-schedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ schedule, month: currentMonth })
