@@ -1,9 +1,16 @@
 import express from 'express';
 import { Pool } from 'pg';
 import fetch from 'node-fetch'; // Add at the top if not already imported
+import cors from 'cors'; // <-- Add this line
 
 const app = express();
 app.use(express.json());
+
+// Enable CORS for your frontend origin
+app.use(cors({
+  origin: 'http://192.168.1.229',
+  credentials: true
+}));
 
 const pool = new Pool({
   connectionString: 'postgresql://soc_user:admin123@localhost:5432/soc_scheduler'
