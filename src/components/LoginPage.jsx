@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 
 // API base URL
-const API_BASE = "http://192.168.1.229";
+const API_BASE = "http://192.168.1.229:4000";
 
 export default function LoginPage({ onLogin }) {
   const [step, setStep] = useState(1); // 1: enter email, 2: set password, 3: enter password
