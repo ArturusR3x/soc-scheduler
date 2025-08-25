@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "soc-scheduler",
-      script: "../src/index.js", // Adjust the path to your application's entry point
+      script: "../src/api/server.js", // Adjust the path to your application's entry point
       instances: "max", // Use maximum instances
       exec_mode: "cluster", // Enable cluster mode
       env: {
