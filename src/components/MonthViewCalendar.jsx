@@ -85,7 +85,7 @@ export default function MonthViewCalendar({
     if (days.length > 0) {
       const firstDay = days[0];
       const prevDay = addDays(firstDay, -1);
-      const prevKey = format(prevDay, "yyyy-MM-dd");
+      const prevKey = format(prevDay, "MM-dd-yyyy");
       if (schedule[prevKey]) {
         filteredMembers.forEach(m => {
           const prevShift = schedule[prevKey][m];
