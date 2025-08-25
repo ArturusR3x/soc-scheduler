@@ -2,7 +2,8 @@ import express from 'express';
 import { Pool } from 'pg';
 import fetch from 'node-fetch'; // Add at the top if not already imported
 import cors from 'cors'; // <-- Add this line
-import { compareAsc, format } from "date-fns";
+import { format as formatDate } from 'date-fns'; // Add at the top if not present
+
 const app = express();
 app.use(express.json());
 
@@ -236,14 +237,15 @@ app.get('/api/get-schedule', async (req, res) => {
     // Convert to { [date]: { [member]: shiftType } }
     const schedule = {};
     result.rows.forEach(row => {
-      // Format as M/D/YYYY (month/day/year, no leading zeros)
-      const dateObj = new Date(row.shift_date);
-      const dateKey = format(dateObj, "M/d/yyyy");console.log(dateKey);
+      // Convert to MM-DD-YYYY (remove time zone)
+      const dateKey = row.shift_date instanceof Date
+        ? formatDate(row.shift_date, 'MM-dd-yyyy')
+        : row.shift_date; 
       if (!schedule[dateKey]) schedule[dateKey] = {};
       schedule[dateKey][row.member_name] = row.shift_type;
     });
 
-    res.json({ schedule });
+    res.json({ schedule }); // This is correct for frontend usage
   } catch (err) {
     console.error("❌ Error fetching schedule:", err);
     res.status(500).json({ error: err.message });
@@ -272,11 +274,8 @@ app.get('/api/get-month-schedule', async (req, res) => {
     // Format as { [date]: { [member]: shiftType } }
     const schedule = {};
     result.rows.forEach(row => {
-      // Format as M/D/YYYY (month/day/year, no leading zeros)
-      const dateObj = new Date(row.shift_date);
-      const dateKey = dateObj.toLocaleDateString('en-US');
-      if (!schedule[dateKey]) schedule[dateKey] = {};
-      schedule[dateKey][row.member] = row.shift_type;
+      if (!schedule[row.shift_date]) schedule[row.shift_date] = {};
+      schedule[row.shift_date][row.member] = row.shift_type;
     });
 
     res.json({ schedule });
