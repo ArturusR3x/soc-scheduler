@@ -236,15 +236,14 @@ app.get('/api/get-schedule', async (req, res) => {
     // Convert to { [date]: { [member]: shiftType } }
     const schedule = {};
     result.rows.forEach(row => {
-      // Convert to YYYY-MM-DD (remove time zone)
-      const dateKey = row.shift_date instanceof Date
-        ? row.shift_date.toLocaleDateString().split('T')[0]
-        : row.shift_date;
+      // Format as M/D/YYYY (month/day/year, no leading zeros)
+      const dateObj = new Date(row.shift_date);
+      const dateKey = dateObj.toLocaleDateString('en-US');
       if (!schedule[dateKey]) schedule[dateKey] = {};
       schedule[dateKey][row.member_name] = row.shift_type;
     });
 
-    res.json({ schedule }); // This is correct for frontend usage
+    res.json({ schedule });
   } catch (err) {
     console.error("❌ Error fetching schedule:", err);
     res.status(500).json({ error: err.message });
@@ -273,8 +272,11 @@ app.get('/api/get-month-schedule', async (req, res) => {
     // Format as { [date]: { [member]: shiftType } }
     const schedule = {};
     result.rows.forEach(row => {
-      if (!schedule[row.shift_date]) schedule[row.shift_date] = {};
-      schedule[row.shift_date][row.member] = row.shift_type;
+      // Format as M/D/YYYY (month/day/year, no leading zeros)
+      const dateObj = new Date(row.shift_date);
+      const dateKey = dateObj.toLocaleDateString('en-US');
+      if (!schedule[dateKey]) schedule[dateKey] = {};
+      schedule[dateKey][row.member] = row.shift_type;
     });
 
     res.json({ schedule });
