@@ -85,7 +85,7 @@ export default function MonthViewCalendar({
     if (days.length > 0) {
       const firstDay = days[0];
       const prevDay = addDays(firstDay, -1);
-      const prevKey = format(prevDay, "MM-dd-yyyy");
+      const prevKey = format(prevDay, "M-d-yyyy");
       if (schedule[prevKey]) {
         filteredMembers.forEach(m => {
           const prevShift = schedule[prevKey][m];
@@ -103,7 +103,7 @@ export default function MonthViewCalendar({
     const newSchedule = {};
     for (let dayIdx = 0; dayIdx < days.length; dayIdx++) {
       const day = days[dayIdx];
-      const dateKey = format(day, "yyyy-MM-dd");
+      const dateKey = format(day, "M/d/yyyy");
       newSchedule[dateKey] = {};
 
       // For each shift, pick up to 2 members
@@ -224,7 +224,7 @@ export default function MonthViewCalendar({
             let day = startDate;
             let colIdx = 0;
             while (day <= endDate) {
-              const dateKey = format(day, "yyyy-MM-dd");
+              const dateKey = format(day, "M/d/yyyy");
               const formattedDate = format(day, "d");
               const shifts = schedule[dateKey] || {};
               const isLastCol = colIdx % 7 === 6;
@@ -235,7 +235,7 @@ export default function MonthViewCalendar({
                 selectedDate &&
                 selectedDate instanceof Date &&
                 !isNaN(selectedDate.getTime()) &&
-                format(day, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
+                format(day, "M/d/yyyy") === format(selectedDate, "M/d/yyyy")
               ) {
                 isSelected = true;
               }
@@ -246,7 +246,7 @@ export default function MonthViewCalendar({
                     ${isSelected ? "ring-4 ring-blue-500 ring-offset-2 z-10" : ""}
                     ${!isSameMonth(day, monthStart)
                       ? "bg-gray-800 text-gray-500"
-                      : format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                      : format(day, "M/d/yyyy") === format(new Date(), "M/d/yyyy")
                         ? "bg-blue-100 text-blue-900 shadow-lg border-blue-400"
                         : "bg-gray-900 text-white hover:shadow-lg hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-900 hover:to-blue-700"}
                   `}
@@ -257,7 +257,7 @@ export default function MonthViewCalendar({
                   {/* Date badge */}
                   <div className="absolute top-1 right-1 z-10">
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold select-none shadow-sm
-                      ${format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-200"}
+                      ${format(day, "M/d/yyyy") === format(new Date(), "M/d/yyyy") ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-200"}
                     `}>
                       {formattedDate}
                     </span>
