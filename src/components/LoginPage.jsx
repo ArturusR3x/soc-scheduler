@@ -50,8 +50,8 @@ export default function LoginPage({ onLogin }) {
         return;
       }
       // Email exists, proceed to password step
-      const data = await res.json();
-      setUser(data);
+      const data = await res.json(); console.log(data);
+      setUser(data); 
       if (!data.password) {
         setStep(2); // No password, ask to set new password
       } else {
