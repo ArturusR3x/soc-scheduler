@@ -185,6 +185,7 @@ app.post('/api/save-month-schedule', async (req, res) => {
         );
       }
     }
+    console.log("✅ Finished saving schedule for month:", month);
     res.json({ success: true });
   } catch (err) {
     console.error("Error saving schedule:", err);
@@ -237,14 +238,15 @@ app.get('/api/get-schedule', async (req, res) => {
     // Convert to { [date]: { [member]: shiftType } }
     const schedule = {};
     result.rows.forEach(row => {
-      // Convert to MM-DD-YYYY (remove time zone)
+      // Use MM/dd/yyyy format for dateKey
       const dateKey = row.shift_date instanceof Date
-        ? formatDate(row.shift_date, 'MM-dd-yyyy')
-        : row.shift_date; 
+        ? formatDate(row.shift_date, 'MM/dd/yyyy')
+        : formatDate(new Date(row.shift_date), 'MM/dd/yyyy');
       if (!schedule[dateKey]) schedule[dateKey] = {};
       schedule[dateKey][row.member_name] = row.shift_type;
     });
 
+    console.log("Fetched schedule:", schedule); // Debug log
     res.json({ schedule }); // This is correct for frontend usage
   } catch (err) {
     console.error("❌ Error fetching schedule:", err);
@@ -274,10 +276,15 @@ app.get('/api/get-month-schedule', async (req, res) => {
     // Format as { [date]: { [member]: shiftType } }
     const schedule = {};
     result.rows.forEach(row => {
-      if (!schedule[row.shift_date]) schedule[row.shift_date] = {};
-      schedule[row.shift_date][row.member] = row.shift_type;
+      // Use MM/dd/yyyy format for dateKey
+      const dateKey = row.shift_date instanceof Date
+        ? formatDate(row.shift_date, 'MM/dd/yyyy')
+        : formatDate(new Date(row.shift_date), 'MM/dd/yyyy');
+      if (!schedule[dateKey]) schedule[dateKey] = {};
+      schedule[dateKey][row.member] = row.shift_type;
     });
 
+    console.log("Fetched month schedule:", schedule); // Debug log
     res.json({ schedule });
   } catch (err) {
     console.error("Error fetching month schedule:", err);
