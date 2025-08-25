@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 
+// API base URL
+const API_BASE = "http://192.168.1.229";
+
 export default function LoginPage({ onLogin }) {
   const [step, setStep] = useState(1); // 1: enter email, 2: set password, 3: enter password
   const [email, setEmail] = useState("");
@@ -40,7 +43,7 @@ export default function LoginPage({ onLogin }) {
 
     try {
       // Check if email exists in DB (case-insensitive, backend handles it)
-      const res = await fetch(`/api/member-by-email?email=${encodeURIComponent(emailTrimmed)}`);
+      const res = await fetch(`${API_BASE}/api/member-by-email?email=${encodeURIComponent(emailTrimmed)}`);
       if (!res.ok) {
         setError("Email not found in database. Please verify your email address.");
         setLoading(false);
@@ -71,14 +74,14 @@ export default function LoginPage({ onLogin }) {
       return;
     }
     try {
-      const res = await fetch("/api/set-password", {
+      const res = await fetch(`${API_BASE}/api/set-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, password: newPassword })
       });
       if (!res.ok) throw new Error("Failed to set password");
       // After setting password, fetch user again to get updated password field
-      const userRes = await fetch(`/api/member-by-email?email=${encodeURIComponent(user.email)}`);
+      const userRes = await fetch(`${API_BASE}/api/member-by-email?email=${encodeURIComponent(user.email)}`);
       const updatedUser = userRes.ok ? await userRes.json() : { ...user, password: newPassword };
       setUser(updatedUser);
       setStep(3);
@@ -109,7 +112,7 @@ export default function LoginPage({ onLogin }) {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       // Send credential to backend for verification and user lookup/creation
-      const res = await fetch("/api/google-login", {
+      const res = await fetch(`${API_BASE}/api/google-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: credentialResponse.credential }),
