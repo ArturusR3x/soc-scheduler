@@ -75,13 +75,15 @@ export default function MonthViewCalendar({
 
     // Helper: get group for a member (works for both object and string)
     const getGroup = m => {
-      if (typeof m === "object" && m.group) return m.group;
-      // If m is a string, find the member object in the members array
-      if (typeof m === "string") {
+      let group = null;
+      if (typeof m === "object" && m.group) group = m.group;
+      else if (typeof m === "string") {
         const found = members.find(mem => mem.name === m);
-        return found && found.group ? found.group : null;
+        group = found && found.group ? found.group : null;
       }
-      return null;
+      // Debug log for group extraction
+      console.log("[getGroup] member:", m, "group:", group);
+      return group;
     };
 
     // Helper: case-insensitive group compare
