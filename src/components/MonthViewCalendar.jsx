@@ -9,7 +9,7 @@ import {
   isSameMonth,
 } from "date-fns";
 import { format as formatDate, subMonths, addMonths } from "date-fns";
-
+const API_BASE = "http://192.168.1.229:4000";
 // Make sure selectedDate is passed as a prop to MonthViewCalendar
 export default function MonthViewCalendar({
   schedule,
@@ -56,10 +56,35 @@ export default function MonthViewCalendar({
   }
 
   // Fair random assignment of shifts for the month with rules and varied shifts
-  const randomizeShifts = useCallback(() => {
-    console.log("RandomizeShifts update deployed: BACKEND+ excluded from shift 1"); // <-- deployment marker
+  const randomizeShifts = useCallback(async () => {
+    console.log("RandomizeShifts update deployed: BACKEND+ excluded from shift 1");
+
+    // Fetch latest member groups from DB before randomizing
+    let latestMembers = members;
+    try {
+      const res = await fetch(`${API_BASE}/api/all-member-groups`);
+      if (res.ok) {
+        latestMembers = await res.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch latest member groups, using local members array.");
+    }
+
+    // Helper: get group for a member (works for both object and string)
+    const getGroup = m => {
+      if (typeof m === "object" && m.group) return m.group;
+      if (typeof m === "string") {
+        const found = latestMembers.find(mem =>
+          (mem.name && mem.name.trim() === m.trim()) ||
+          (mem.email && mem.email.trim() === m.trim())
+        );
+        return found && found.group ? found.group : null;
+      }
+      return null;
+    };
+
     // Exclude members with group "BACKEND" (but not "BACKEND+")
-    const filteredMembers = members.filter(m => {
+    const filteredMembers = latestMembers.filter(m => {
       const group = (typeof m === "object" && m.group) ? m.group : null;
       // If m is just a name, get group from schedule or skip
       if (!group && typeof m === "string" && schedule) {
@@ -73,23 +98,6 @@ export default function MonthViewCalendar({
     const shifts = [1, 2, 3];
     const perShift = 2; // 2 people per shift per day
 
-    // Helper: get group for a member (works for both object and string)
-    const getGroup = m => {
-      let group = null;
-      if (typeof m === "object" && m.group) group = m.group;
-      else if (typeof m === "string") {
-        // Fix: match by name or by email (for robustness)
-        const found = members.find(mem =>
-          (mem.name && mem.name === m) ||
-          (mem.email && mem.email === m)
-        );
-        group = found && found.group ? found.group : null;
-      }
-      console.log("[getGroup] member:", m, "group:", group);
-      return group;
-    };
-
-    // Helper: case-insensitive group compare
     const isBackendPlus = m => (getGroup(m) || "").toLowerCase() === "backend+";
     const isSouth = m => (getGroup(m) || "").toLowerCase() === "south";
 
