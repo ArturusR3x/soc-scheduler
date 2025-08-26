@@ -70,6 +70,11 @@ export default function MonthViewCalendar({
       console.warn("Failed to fetch latest member groups, using local members array.");
     }
 
+    // Fix: Use member names for assignment, but use objects for group logic
+    const memberNames = Array.isArray(latestMembers) && typeof latestMembers[0] === "object"
+      ? latestMembers.map(m => m.name)
+      : latestMembers;
+
     // Helper: get group for a member (works for both object and string)
     const getGroup = m => {
       let group = null;
@@ -81,19 +86,13 @@ export default function MonthViewCalendar({
         );
         group = found && found.group ? found.group : null;
       }
-      // Debug log for fetched group
       console.log(`[getGroup] User:`, m, `Fetched group:`, group);
       return group;
     };
 
     // Exclude members with group "BACKEND" (but not "BACKEND+")
-    const filteredMembers = latestMembers.filter(m => {
-      const group = (typeof m === "object" && m.group) ? m.group : null;
-      // If m is just a name, get group from schedule or skip
-      if (!group && typeof m === "string" && schedule) {
-        // Try to get group from schedule or skip
-        return true; // fallback: allow, since App.jsx already filters
-      }
+    const filteredMembers = memberNames.filter(name => {
+      const group = getGroup(name);
       return group !== "BACKEND";
     });
     if (!filteredMembers.length) return;
@@ -156,7 +155,6 @@ export default function MonthViewCalendar({
       });
 
       // --- New rules logic ---
-      // Helper: filter candidates for a shift based on group rules
       function filterShiftCandidates(candidates, assigned, shiftNum) {
         // Exclude BACKEND+ from shift 1
         if (shiftNum === 1) {
@@ -395,3 +393,4 @@ export default function MonthViewCalendar({
     </div>
   );
 }
+
