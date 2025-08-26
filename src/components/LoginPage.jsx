@@ -130,90 +130,90 @@ export default function LoginPage({ onLogin }) {
   };
 
   return (
-  <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900">
-    <div className="bg-white/10 rounded-3xl shadow-2xl p-10 space-y-8 w-full max-w-md backdrop-blur-md border border-white/20">
-      <h1 className="text-4xl font-extrabold text-center text-blue-300 mb-6">SOC Scheduler Login</h1>
-      {step === 1 && (
-        <form className="space-y-6" onSubmit={handleEmailSubmit}>
-          <div>
-            <label className="block text-blue-200 font-semibold mb-2">Email</label>
-            <input
-              type="email"
-              className="w-full rounded-xl px-4 py-3 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              autoComplete="email"
-              required
-            />
-          </div>
-          {error && <div className="text-red-400 text-sm">{error}</div>}
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition"
-            disabled={loading}
-          >
-            {loading ? "Checking..." : "Next"}
-          </button>
-        </form>
-      )}
-      {step === 2 && (
-        <form className="space-y-6" onSubmit={handleSetPassword}>
-          <div>
-            <label className="block text-blue-200 font-semibold mb-2">Set New Password</label>
-            <input
-              type="password"
-              className="w-full rounded-xl px-4 py-3 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              placeholder="Create password"
-              autoComplete="new-password"
-              required
-            />
-          </div>
-          <div className="text-xs text-blue-200 mb-2">
-            Password must be at least 6 characters.
-          </div>
-          {error && <div className="text-red-400 text-sm">{error}</div>}
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition"
-            disabled={loading}
-          >
-            {loading ? "Saving..." : "Save Password"}
-          </button>
-        </form>
-      )}
-      {step === 3 && (
-        <form className="space-y-6" onSubmit={handleLogin}>
-          <div>
-            <label className="block text-blue-200 font-semibold mb-2">Password</label>
-            <input
-              type="password"
-              className="w-full rounded-xl px-4 py-3 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Enter password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
-          {error && <div className="text-red-400 text-sm">{error}</div>}
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition"
-            disabled={loading}
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-      )}
-      <div className="flex flex-col items-center gap-2 mt-4">
-        <span className="text-gray-300 text-xs">or</span>
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={() => setError("Google login failed.")}
-          useOneTap
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900">
+      <div className="bg-white/10 rounded-3xl shadow-2xl p-10 space-y-8 w-full max-w-md backdrop-blur-md border border-white/20">
+        <h1 className="text-4xl font-extrabold text-center text-blue-300 mb-6">SOC Scheduler Login</h1>
+        {step === 1 && (
+          <form className="space-y-6" onSubmit={handleEmailSubmit}>
+            <div>
+              <label className="block text-blue-200 font-semibold mb-2">Email</label>
+              <input
+                type="email"
+                className="w-full rounded-xl px-4 py-3 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                autoComplete="email"
+                required
+              />
+            </div>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition"
+              disabled={loading}
+            >
+              {loading ? "Checking..." : "Next"}
+            </button>
+          </form>
+        )}
+        {step === 2 && (
+          <form className="space-y-6" onSubmit={handleSetPassword}>
+            <div>
+              <label className="block text-blue-200 font-semibold mb-2">Set New Password</label>
+              <input
+                type="password"
+                className="w-full rounded-xl px-4 py-3 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Create password"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <div className="text-xs text-blue-200 mb-2">
+              Password must be at least 6 characters.
+            </div>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition"
+              disabled={loading}
+            >
+              {loading ? "Saving..." : "Save Password"}
+            </button>
+          </form>
+        )}
+        {step === 3 && (
+          <form className="space-y-6" onSubmit={handleLogin}>
+            <div>
+              <label className="block text-blue-200 font-semibold mb-2">Password</label>
+              <input
+                type="password"
+                className="w-full rounded-xl px-4 py-3 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition"
+              disabled={loading}
+            >
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+        )}
+        <div className="flex flex-col items-center gap-2 mt-4">
+          <span className="text-gray-300 text-xs">or</span>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError("Google login failed.")}
+            useOneTap
           />
         </div>
       </div>
