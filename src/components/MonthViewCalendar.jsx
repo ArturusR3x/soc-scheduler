@@ -75,18 +75,16 @@ export default function MonthViewCalendar({
 
     // Helper: get group for a member (works for both object and string)
     const getGroup = m => {
-      let group = null;
-      if (typeof m === "object" && m.group) group = m.group;
-      else if (typeof m === "string") {
-        // Fix: match by name or by email (for robustness)
+      if (typeof m === "object" && m.group) return m.group;
+      if (typeof m === "string") {
+        // Try to match by name first, then by email
         const found = members.find(mem =>
           (mem.name && mem.name === m) ||
           (mem.email && mem.email === m)
         );
-        group = found && found.group ? found.group : null;
+        return found && found.group ? found.group : null;
       }
-      console.log("[getGroup] member:", m, "group:", group);
-      return group;
+      return null;
     };
 
     // Helper: case-insensitive group compare
@@ -382,5 +380,7 @@ export default function MonthViewCalendar({
         </div>
       </div>
     </div>
+  );
+}
   );
 }
