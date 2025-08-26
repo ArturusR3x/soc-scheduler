@@ -345,7 +345,7 @@ export default function App() {
           <Forum members={members} clients={clients} setClients={setClients} />
         )}
       </div>
-      <div className="w-full bg-transparent shadow-none text-gray-300 text-right px-8 py-4">
+      <div className="w-full text-gray-300 text-right px-8 py-4 mt-auto" style={{ background: "transparent" }}>
         © 2025 SOC Scheduler
       </div>
     </div>
