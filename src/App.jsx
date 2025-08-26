@@ -162,7 +162,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#181e29] via-[#233056] to-[#1e2a47] flex flex-col">
-      <div className="w-full bg-white/10 rounded-2xl p-8 space-y-8">
+      <div className="w-full bg-white/10 rounded-2xl shadow-2xl p-8 space-y-8">
         {/* Show logged-in user and group */}
         <div className="flex justify-between items-center mb-2">
           <span className="text-blue-200 font-semibold">
@@ -345,7 +345,9 @@ export default function App() {
           <Forum members={members} clients={clients} setClients={setClients} />
         )}
       </div>
-      <footer className="mt-8 text-gray-400 text-xs text-center">&copy; {new Date().getFullYear()} SOC Scheduler</footer>
+      <div className="w-full bg-transparent shadow-none text-gray-300 text-right px-8 py-4">
+        © 2025 SOC Scheduler
+      </div>
     </div>
   );
 }
