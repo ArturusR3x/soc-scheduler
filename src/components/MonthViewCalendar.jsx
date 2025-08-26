@@ -72,15 +72,18 @@ export default function MonthViewCalendar({
 
     // Helper: get group for a member (works for both object and string)
     const getGroup = m => {
-      if (typeof m === "object" && m.group) return m.group;
+      let group = null;
+      if (typeof m === "object" && m.group) group = m.group;
       if (typeof m === "string") {
         const found = latestMembers.find(mem =>
           (mem.name && mem.name.trim() === m.trim()) ||
           (mem.email && mem.email.trim() === m.trim())
         );
-        return found && found.group ? found.group : null;
+        group = found && found.group ? found.group : null;
       }
-      return null;
+      // Debug log for fetched group
+      console.log(`[getGroup] User:`, m, `Fetched group:`, group);
+      return group;
     };
 
     // Exclude members with group "BACKEND" (but not "BACKEND+")
