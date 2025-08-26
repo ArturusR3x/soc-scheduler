@@ -243,7 +243,7 @@ export default function MonthViewCalendar({
               calendarCells.push(
                 <div
                   key={dateKey}
-                  className={`h-32 p-2 cursor-pointer ${borderClass} border-t border-gray-600 text-xs relative overflow-hidden rounded-lg transition-shadow duration-200
+                  className={`h-32 p-2 cursor-pointer ${borderClass} border-t border-gray-600 text-xs relative rounded-lg transition-shadow duration-200
                     ${isSelected ? "ring-4 ring-blue-500 ring-offset-2 z-10" : ""}
                     ${!isSameMonth(day, monthStart)
                       ? "bg-gray-800 text-gray-500"
