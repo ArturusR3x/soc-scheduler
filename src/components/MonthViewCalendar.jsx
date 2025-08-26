@@ -166,7 +166,9 @@ export default function MonthViewCalendar({
 
       // Try to vary shifts: prefer not to assign the same shift as yesterday
       // 1. Assign shift 1 (prefer members whose last shift was not 1)
-      let shift1Candidates = filteredMembers.filter(m => available[m].includes(1));
+      let shift1Candidates = filteredMembers
+        .filter(m => available[m].includes(1))
+        .filter(m => (getGroup(m) || "").toLowerCase() !== "backend+"); // <-- exclude BACKEND+ here
       shift1Candidates = filterShiftCandidates(shift1Candidates, [], 1);
       let shift1Pref = shuffle(shift1Candidates.filter(m => lastShift[m] !== 1));
       let shift1Fill = shuffle(shift1Candidates.filter(m => lastShift[m] === 1));
