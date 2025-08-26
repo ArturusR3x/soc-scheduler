@@ -129,25 +129,35 @@ export default function MonthViewCalendar({
       // --- New rules logic ---
       // Helper: filter candidates for a shift based on group rules
       function filterShiftCandidates(candidates, assigned, shiftNum) {
-        // Exclude BACKEND+ from shift 1
+        // Exclude BACKEND+ from shift 1 (case insensitive)
         if (shiftNum === 1) {
-          candidates = candidates.filter(m => getGroup(m) !== "BACKEND+");
+          candidates = candidates.filter(
+            m => (getGroup(m) || "").toLowerCase() !== "backend+"
+          );
         }
-        // Only one BACKEND+ per shift (2 or 3)
+        // Only one BACKEND+ per shift (2 or 3, case insensitive)
         if (shiftNum === 2 || shiftNum === 3) {
-          const backendPlus = candidates.filter(m => getGroup(m) === "BACKEND+");
+          const backendPlus = candidates.filter(
+            m => (getGroup(m) || "").toLowerCase() === "backend+"
+          );
           if (backendPlus.length > 1) {
             const keep = shuffle(backendPlus).slice(0, 1);
-            candidates = candidates.filter(m => getGroup(m) !== "BACKEND+").concat(keep);
+            candidates = candidates.filter(
+              m => (getGroup(m) || "").toLowerCase() !== "backend+"
+            ).concat(keep);
           }
         }
         // Rule 1: north can be together at shift 1 (no restriction)
-        // Rule 3: south cannot be together at shift 1
+        // Rule 3: south cannot be together at shift 1 (case insensitive)
         if (shiftNum === 1) {
-          const south = candidates.filter(m => getGroup(m) === "SOUTH");
+          const south = candidates.filter(
+            m => (getGroup(m) || "").toLowerCase() === "south"
+          );
           if (south.length > 1) {
             const keep = shuffle(south).slice(0, 1);
-            candidates = candidates.filter(m => getGroup(m) !== "SOUTH").concat(keep);
+            candidates = candidates.filter(
+              m => (getGroup(m) || "").toLowerCase() !== "south"
+            ).concat(keep);
           }
         }
         return candidates;
