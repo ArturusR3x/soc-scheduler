@@ -218,7 +218,8 @@ export default function MonthViewCalendar({
 
       {/* Calendar body */}
       <div className="w-full min-w-0 overflow-x-auto">
-        <div className="grid grid-cols-7 border-l border-b border-gray-600 w-full min-w-[560px]">
+        <div className="grid grid-cols-7 border-l border-b border-gray-600 w-full min-w-[560px] overflow-visible">
+
           {(() => {
             const calendarCells = [];
             let day = startDate;
