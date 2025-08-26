@@ -75,6 +75,10 @@ export default function MonthViewCalendar({
     // Helper: get group for a member
     const getGroup = m => (typeof m === "object" && m.group) ? m.group : null;
 
+    // Helper: case-insensitive group compare
+    const isBackendPlus = m => (getGroup(m) || "").toLowerCase() === "backend+";
+    const isSouth = m => (getGroup(m) || "").toLowerCase() === "south";
+
     // Track last shift for each member
     const lastShift = {};
     // Track how many times each member gets each shift
@@ -129,37 +133,27 @@ export default function MonthViewCalendar({
       // --- New rules logic ---
       // Helper: filter candidates for a shift based on group rules
       function filterShiftCandidates(candidates, assigned, shiftNum) {
-        // Exclude BACKEND+ from shift 1 (case insensitive)
+        // Exclude BACKEND+ from shift 1
         if (shiftNum === 1) {
-          candidates = candidates.filter(
-            m => (getGroup(m) || "").toLowerCase() !== "backend+"
-          );
+          candidates = candidates.filter(m => !isBackendPlus(m));
         }
-        // Only one BACKEND+ per shift (2 or 3, case insensitive)
+        // Only one BACKEND+ per shift (2 or 3)
         if (shiftNum === 2 || shiftNum === 3) {
-          const backendPlus = candidates.filter(
-            m => (getGroup(m) || "").toLowerCase() === "backend+"
-          );
+          const backendPlus = candidates.filter(isBackendPlus);
           if (backendPlus.length > 1) {
             const keep = shuffle(backendPlus).slice(0, 1);
-            candidates = candidates.filter(
-              m => (getGroup(m) || "").toLowerCase() !== "backend+"
-            ).concat(keep);
+            candidates = candidates.filter(m => !isBackendPlus(m)).concat(keep);
+          }
+        }
+        // Rule 3: south cannot be together at shift 1
+        if (shiftNum === 1) {
+          const south = candidates.filter(isSouth);
+          if (south.length > 1) {
+            const keep = shuffle(south).slice(0, 1);
+            candidates = candidates.filter(m => !isSouth(m)).concat(keep);
           }
         }
         // Rule 1: north can be together at shift 1 (no restriction)
-        // Rule 3: south cannot be together at shift 1 (case insensitive)
-        if (shiftNum === 1) {
-          const south = candidates.filter(
-            m => (getGroup(m) || "").toLowerCase() === "south"
-          );
-          if (south.length > 1) {
-            const keep = shuffle(south).slice(0, 1);
-            candidates = candidates.filter(
-              m => (getGroup(m) || "").toLowerCase() !== "south"
-            ).concat(keep);
-          }
-        }
         return candidates;
       }
       // --- End new rules logic ---
@@ -168,21 +162,35 @@ export default function MonthViewCalendar({
       // 1. Assign shift 1 (prefer members whose last shift was not 1)
       let shift1Candidates = filteredMembers
         .filter(m => available[m].includes(1))
-        .filter(m => (getGroup(m) || "").toLowerCase() !== "backend+"); // <-- exclude BACKEND+ here
+        .filter(m => !isBackendPlus(m)); // exclude BACKEND+ here
       shift1Candidates = filterShiftCandidates(shift1Candidates, [], 1);
       let shift1Pref = shuffle(shift1Candidates.filter(m => lastShift[m] !== 1));
       let shift1Fill = shuffle(shift1Candidates.filter(m => lastShift[m] === 1));
       let shift1Assigned = [...shift1Pref, ...shift1Fill].slice(0, perShift);
 
       // 2. Assign shift 2 (prefer members whose last shift was not 2, and not already assigned)
-      let shift2Candidates = filteredMembers.filter(m => available[m].includes(2) && !shift1Assigned.includes(m));
+      let shift2Candidates = filteredMembers
+        .filter(m => available[m].includes(2) && !shift1Assigned.includes(m));
+      // Only one BACKEND+ in shift 2
+      const backendPlus2 = shift2Candidates.filter(isBackendPlus);
+      if (backendPlus2.length > 1) {
+        const keep = shuffle(backendPlus2).slice(0, 1);
+        shift2Candidates = shift2Candidates.filter(m => !isBackendPlus(m)).concat(keep);
+      }
       shift2Candidates = filterShiftCandidates(shift2Candidates, shift1Assigned, 2);
       let shift2Pref = shuffle(shift2Candidates.filter(m => lastShift[m] !== 2));
       let shift2Fill = shuffle(shift2Candidates.filter(m => lastShift[m] === 2));
       let shift2Assigned = [...shift2Pref, ...shift2Fill].slice(0, perShift);
 
       // 3. Assign shift 3 (prefer members whose last shift was not 3, and not already assigned)
-      let shift3Candidates = filteredMembers.filter(m => available[m].includes(3) && !shift1Assigned.includes(m) && !shift2Assigned.includes(m));
+      let shift3Candidates = filteredMembers
+        .filter(m => available[m].includes(3) && !shift1Assigned.includes(m) && !shift2Assigned.includes(m));
+      // Only one BACKEND+ in shift 3
+      const backendPlus3 = shift3Candidates.filter(isBackendPlus);
+      if (backendPlus3.length > 1) {
+        const keep = shuffle(backendPlus3).slice(0, 1);
+        shift3Candidates = shift3Candidates.filter(m => !isBackendPlus(m)).concat(keep);
+      }
       shift3Candidates = filterShiftCandidates(shift3Candidates, [...shift1Assigned, ...shift2Assigned], 3);
       let shift3Pref = shuffle(shift3Candidates.filter(m => lastShift[m] !== 3));
       let shift3Fill = shuffle(shift3Candidates.filter(m => lastShift[m] === 3));
