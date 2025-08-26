@@ -186,6 +186,7 @@ export default function MonthViewCalendar({
       let shift1Candidates = filteredMembers
         .filter(m => available[m].includes(1))
         .filter(m => !isBackendPlus(m)); // exclude BACKEND+ here
+      // --- FIX: Apply all rules in filterShiftCandidates, not just backend+ ---
       shift1Candidates = filterShiftCandidates(shift1Candidates, [], 1);
       let shift1Pref = shuffle(shift1Candidates.filter(m => lastShift[m] !== 1));
       let shift1Fill = shuffle(shift1Candidates.filter(m => lastShift[m] === 1));
@@ -194,12 +195,7 @@ export default function MonthViewCalendar({
       // 2. Assign shift 2 (prefer members whose last shift was not 2, and not already assigned)
       let shift2Candidates = filteredMembers
         .filter(m => available[m].includes(2) && !shift1Assigned.includes(m));
-      // Only one BACKEND+ in shift 2
-      const backendPlus2 = shift2Candidates.filter(isBackendPlus);
-      if (backendPlus2.length > 1) {
-        const keep = shuffle(backendPlus2).slice(0, 1);
-        shift2Candidates = shift2Candidates.filter(m => !isBackendPlus(m)).concat(keep);
-      }
+      // --- FIX: Apply all rules in filterShiftCandidates ---
       shift2Candidates = filterShiftCandidates(shift2Candidates, shift1Assigned, 2);
       let shift2Pref = shuffle(shift2Candidates.filter(m => lastShift[m] !== 2));
       let shift2Fill = shuffle(shift2Candidates.filter(m => lastShift[m] === 2));
@@ -208,12 +204,7 @@ export default function MonthViewCalendar({
       // 3. Assign shift 3 (prefer members whose last shift was not 3, and not already assigned)
       let shift3Candidates = filteredMembers
         .filter(m => available[m].includes(3) && !shift1Assigned.includes(m) && !shift2Assigned.includes(m));
-      // Only one BACKEND+ in shift 3
-      const backendPlus3 = shift3Candidates.filter(isBackendPlus);
-      if (backendPlus3.length > 1) {
-        const keep = shuffle(backendPlus3).slice(0, 1);
-        shift3Candidates = shift3Candidates.filter(m => !isBackendPlus(m)).concat(keep);
-      }
+      // --- FIX: Apply all rules in filterShiftCandidates ---
       shift3Candidates = filterShiftCandidates(shift3Candidates, [...shift1Assigned, ...shift2Assigned], 3);
       let shift3Pref = shuffle(shift3Candidates.filter(m => lastShift[m] !== 3));
       let shift3Fill = shuffle(shift3Candidates.filter(m => lastShift[m] === 3));
@@ -393,4 +384,5 @@ export default function MonthViewCalendar({
     </div>
   );
 }
+
 
