@@ -184,12 +184,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        {/* Show user's group at the top of the schedule page */}
-        {page === "scheduler" && (
-          <div className="mb-4 text-lg text-blue-400 font-bold text-center">
-            Your Group: {profileGroup || "-"}
-          </div>
-        )}
+        
         {/* Profile Popup */}
         {showProfile && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
