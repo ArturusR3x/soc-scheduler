@@ -129,22 +129,25 @@ export default function MonthViewCalendar({
       // --- New rules logic ---
       // Helper: filter candidates for a shift based on group rules
       function filterShiftCandidates(candidates, assigned, shiftNum) {
-        // Rule 2: backend+ cannot be together at any shift
-        const backendPlus = candidates.filter(m => getGroup(m) === "backend+");
-        if (backendPlus.length > 1) {
-          // Only allow one backend+ per shift
-          // Remove all but one randomly
-          const keep = shuffle(backendPlus).slice(0, 1);
-          candidates = candidates.filter(m => getGroup(m) !== "backend+").concat(keep);
+        // Exclude BACKEND+ from shift 1
+        if (shiftNum === 1) {
+          candidates = candidates.filter(m => getGroup(m) !== "BACKEND+");
+        }
+        // Only one BACKEND+ per shift (2 or 3)
+        if (shiftNum === 2 || shiftNum === 3) {
+          const backendPlus = candidates.filter(m => getGroup(m) === "BACKEND+");
+          if (backendPlus.length > 1) {
+            const keep = shuffle(backendPlus).slice(0, 1);
+            candidates = candidates.filter(m => getGroup(m) !== "BACKEND+").concat(keep);
+          }
         }
         // Rule 1: north can be together at shift 1 (no restriction)
         // Rule 3: south cannot be together at shift 1
         if (shiftNum === 1) {
-          const south = candidates.filter(m => getGroup(m) === "south");
+          const south = candidates.filter(m => getGroup(m) === "SOUTH");
           if (south.length > 1) {
-            // Only allow one south at shift 1
             const keep = shuffle(south).slice(0, 1);
-            candidates = candidates.filter(m => getGroup(m) !== "south").concat(keep);
+            candidates = candidates.filter(m => getGroup(m) !== "SOUTH").concat(keep);
           }
         }
         return candidates;
