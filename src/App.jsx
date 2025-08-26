@@ -123,7 +123,7 @@ export default function App() {
           Object.entries(data.schedule || data).forEach(([key, value]) => {
             const match = key.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
             if (match) {
-              const [_, d, m, y] = match;
+              const [_, m, d, y] = match;
               const iso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
               normalizedSchedule[iso] = value;
             } else {
