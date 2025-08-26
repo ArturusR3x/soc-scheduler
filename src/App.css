@@ -4,7 +4,12 @@
   padding: 2rem;
   text-align: center;
 }
-
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #181e29; /* Use your app's background color */
+}
 .logo {
   height: 6em;
   padding: 1.5em;
