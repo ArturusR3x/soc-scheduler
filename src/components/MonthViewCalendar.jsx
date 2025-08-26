@@ -57,6 +57,7 @@ export default function MonthViewCalendar({
 
   // Fair random assignment of shifts for the month with rules and varied shifts
   const randomizeShifts = useCallback(() => {
+    console.log("RandomizeShifts update deployed: BACKEND+ excluded from shift 1"); // <-- deployment marker
     // Exclude members with group "BACKEND" (but not "BACKEND+")
     const filteredMembers = members.filter(m => {
       const group = (typeof m === "object" && m.group) ? m.group : null;
