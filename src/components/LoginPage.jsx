@@ -130,7 +130,7 @@ export default function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-transparent">
       <div className="bg-white/10 rounded-3xl shadow-2xl p-10 space-y-8 w-full max-w-md backdrop-blur-md border border-white/20">
         <h1 className="text-4xl font-extrabold text-center text-blue-300 mb-6">SOC Scheduler Login</h1>
         {step === 1 && (

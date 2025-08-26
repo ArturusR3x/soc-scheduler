@@ -8,7 +8,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: #181e29; /* Use your app's background color */
+  background: linear-gradient(135deg, #181e29 0%, #233056 50%, #1e2a47 100%);
 }
 .logo {
   height: 6em;
