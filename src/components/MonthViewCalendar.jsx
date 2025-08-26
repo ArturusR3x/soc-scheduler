@@ -70,10 +70,12 @@ export default function MonthViewCalendar({
       console.warn("Failed to fetch latest member groups, using local members array.");
     }
 
+    // Fix: Use member names for assignment, but use objects for group logic
     const memberNames = Array.isArray(latestMembers) && typeof latestMembers[0] === "object"
       ? latestMembers.map(m => m.name)
       : latestMembers;
 
+    // Helper: get group for a member (works for both object and string)
     const getGroup = m => {
       let group = null;
       if (typeof m === "object" && m.group) group = m.group;
@@ -84,23 +86,31 @@ export default function MonthViewCalendar({
         );
         group = found && found.group ? found.group : null;
       }
+      console.log(`[getGroup] User:`, m, `Fetched group:`, group);
       return group;
     };
 
+    // Exclude members with group "BACKEND" (but not "BACKEND+")
     const filteredMembers = memberNames.filter(name => {
       const group = getGroup(name);
       return group !== "BACKEND";
     });
     if (!filteredMembers.length) return;
     const days = getMonthDays();
-    const perShift = 2;
+    const shifts = [1, 2, 3];
+    const perShift = 2; // 2 people per shift per day
 
     const isBackendPlus = m => (getGroup(m) || "").toLowerCase() === "backend+";
     const isSouth = m => (getGroup(m) || "").toLowerCase() === "south";
 
     // Track last shift for each member
     const lastShift = {};
-    filteredMembers.forEach(m => { lastShift[m] = null; });
+    // Track how many times each member gets each shift
+    const shiftCounts = {};
+    filteredMembers.forEach(m => {
+      lastShift[m] = null;
+      shiftCounts[m] = { 1: 0, 2: 0, 3: 0, off: 0 };
+    });
 
     // --- Fix: Initialize lastShift for first day using previous day in schedule ---
     if (days.length > 0) {
@@ -110,7 +120,7 @@ export default function MonthViewCalendar({
       if (schedule[prevKey]) {
         filteredMembers.forEach(m => {
           const prevShift = schedule[prevKey][m];
-          if (prevShift === 1 || prevShift === 2 || prevShift === 3 || prevShift === "off") {
+          if (prevShift === 1 || prevShift === 2 || prevShift === 3) {
             lastShift[m] = prevShift;
           } else {
             lastShift[m] = null;
@@ -127,82 +137,113 @@ export default function MonthViewCalendar({
       const dateKey = format(day, "yyyy-MM-dd");
       newSchedule[dateKey] = {};
 
-      // For each member, rotate their shift from previous day
-      // But enforce rules after rotation
-      let memberNextShift = {};
+      // For each shift, pick up to 2 members
+      let available = {};
       filteredMembers.forEach(m => {
-        let prevShift = lastShift[m];
-        let nextShift;
-        if (prevShift === null) {
-          nextShift = 1;
-        } else if (prevShift === 1) {
-          nextShift = 2;
-        } else if (prevShift === 2) {
-          nextShift = 3;
-        } else if (prevShift === 3) {
-          nextShift = "off";
-        } else if (prevShift === "off") {
-          nextShift = 1;
-        } else {
-          nextShift = 1;
+        // Rule 1: after shift 2, cannot get shift 1 next day
+        if (lastShift[m] === 2) {
+          available[m] = [2, 3, "off"];
         }
-        memberNextShift[m] = nextShift;
+        // Rule 2: after shift 3, must be off
+        else if (lastShift[m] === 3) {
+          available[m] = ["off"];
+        }
+        // Otherwise, can get any shift
+        else {
+          available[m] = [1, 2, 3, "off"];
+        }
       });
 
-      // Prepare candidates for each shift
-      let shift1Candidates = filteredMembers.filter(m => memberNextShift[m] === 1);
-      let shift2Candidates = filteredMembers.filter(m => memberNextShift[m] === 2);
-      let shift3Candidates = filteredMembers.filter(m => memberNextShift[m] === 3);
-      let offCandidates   = filteredMembers.filter(m => memberNextShift[m] === "off");
-
-      // --- Apply rules for each shift ---
-      // Shift 1: Exclude BACKEND+, only one SOUTH, north can be together
-      shift1Candidates = shift1Candidates.filter(m => !isBackendPlus(m));
-      const south1 = shift1Candidates.filter(isSouth);
-      if (south1.length > 1) {
-        const keep = shuffle(south1).slice(0, 1);
-        shift1Candidates = shift1Candidates.filter(m => !isSouth(m)).concat(keep);
+      // --- New rules logic ---
+      function filterShiftCandidates(candidates, assigned, shiftNum) {
+        // Exclude BACKEND+ from shift 1
+        if (shiftNum === 1) {
+          candidates = candidates.filter(m => !isBackendPlus(m));
+        }
+        // Only one BACKEND+ per shift (2 or 3)
+        if (shiftNum === 2 || shiftNum === 3) {
+          const backendPlus = candidates.filter(isBackendPlus);
+          if (backendPlus.length > 1) {
+            const keep = shuffle(backendPlus).slice(0, 1);
+            candidates = candidates.filter(m => !isBackendPlus(m)).concat(keep);
+          }
+        }
+        // Rule 3: south cannot be together at shift 1
+        if (shiftNum === 1) {
+          const south = candidates.filter(isSouth);
+          if (south.length > 1) {
+            const keep = shuffle(south).slice(0, 1);
+            candidates = candidates.filter(m => !isSouth(m)).concat(keep);
+          }
+        }
+        // Rule 1: north can be together at shift 1 (no restriction)
+        return candidates;
       }
+      // --- End new rules logic ---
 
-      // Shift 2: Only one BACKEND+ allowed
+      // Try to vary shifts: prefer not to assign the same shift as yesterday
+      // 1. Assign shift 1 (prefer members whose last shift was not 1)
+      let shift1Candidates = filteredMembers
+        .filter(m => available[m].includes(1))
+        .filter(m => !isBackendPlus(m)); // exclude BACKEND+ here
+      shift1Candidates = filterShiftCandidates(shift1Candidates, [], 1);
+      let shift1Pref = shuffle(shift1Candidates.filter(m => lastShift[m] !== 1));
+      let shift1Fill = shuffle(shift1Candidates.filter(m => lastShift[m] === 1));
+      let shift1Assigned = [...shift1Pref, ...shift1Fill].slice(0, perShift);
+
+      // 2. Assign shift 2 (prefer members whose last shift was not 2, and not already assigned)
+      let shift2Candidates = filteredMembers
+        .filter(m => available[m].includes(2) && !shift1Assigned.includes(m));
+      // Only one BACKEND+ in shift 2
       const backendPlus2 = shift2Candidates.filter(isBackendPlus);
       if (backendPlus2.length > 1) {
         const keep = shuffle(backendPlus2).slice(0, 1);
         shift2Candidates = shift2Candidates.filter(m => !isBackendPlus(m)).concat(keep);
       }
+      shift2Candidates = filterShiftCandidates(shift2Candidates, shift1Assigned, 2);
+      let shift2Pref = shuffle(shift2Candidates.filter(m => lastShift[m] !== 2));
+      let shift2Fill = shuffle(shift2Candidates.filter(m => lastShift[m] === 2));
+      let shift2Assigned = [...shift2Pref, ...shift2Fill].slice(0, perShift);
 
-      // Shift 3: Only one BACKEND+ allowed
+      // 3. Assign shift 3 (prefer members whose last shift was not 3, and not already assigned)
+      let shift3Candidates = filteredMembers
+        .filter(m => available[m].includes(3) && !shift1Assigned.includes(m) && !shift2Assigned.includes(m));
+      // Only one BACKEND+ in shift 3
       const backendPlus3 = shift3Candidates.filter(isBackendPlus);
       if (backendPlus3.length > 1) {
         const keep = shuffle(backendPlus3).slice(0, 1);
         shift3Candidates = shift3Candidates.filter(m => !isBackendPlus(m)).concat(keep);
       }
+      shift3Candidates = filterShiftCandidates(shift3Candidates, [...shift1Assigned, ...shift2Assigned], 3);
+      let shift3Pref = shuffle(shift3Candidates.filter(m => lastShift[m] !== 3));
+      let shift3Fill = shuffle(shift3Candidates.filter(m => lastShift[m] === 3));
+      let shift3Assigned = [...shift3Pref, ...shift3Fill].slice(0, perShift);
 
-      // Assign up to perShift members for each shift
-      shift1Candidates = shuffle(shift1Candidates).slice(0, perShift);
-      shift2Candidates = shuffle(shift2Candidates).slice(0, perShift);
-      shift3Candidates = shuffle(shift3Candidates).slice(0, perShift);
-
-      // The rest are off
-      let assigned = [...shift1Candidates, ...shift2Candidates, ...shift3Candidates];
+      // 4. The rest are off
+      let assigned = [...shift1Assigned, ...shift2Assigned, ...shift3Assigned];
       let offAssigned = filteredMembers.filter(m => !assigned.includes(m));
 
       // Fill schedule for the day
-      shift1Candidates.forEach(m => {
+      shift1Assigned.forEach(m => {
         newSchedule[dateKey][m] = 1;
         lastShift[m] = 1;
+        shiftCounts[m][1]++;
       });
-      shift2Candidates.forEach(m => {
+      shift2Assigned.forEach(m => {
         newSchedule[dateKey][m] = 2;
         lastShift[m] = 2;
+        shiftCounts[m][2]++;
       });
-      shift3Candidates.forEach(m => {
+      shift3Assigned.forEach(m => {
         newSchedule[dateKey][m] = 3;
         lastShift[m] = 3;
+        shiftCounts[m][3]++;
       });
       offAssigned.forEach(m => {
-        newSchedule[dateKey][m] = "off";
-        lastShift[m] = "off";
+        // Only update lastShift if previous shift was 3 (to enforce off after 3)
+        if (lastShift[m] === 3) lastShift[m] = "off";
+        else if (lastShift[m] !== "off") lastShift[m] = null;
+        shiftCounts[m]["off"]++;
       });
     }
 
@@ -352,4 +393,4 @@ export default function MonthViewCalendar({
     </div>
   );
 }
-                        
+
