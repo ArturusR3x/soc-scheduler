@@ -72,8 +72,16 @@ export default function MonthViewCalendar({
     const shifts = [1, 2, 3];
     const perShift = 2; // 2 people per shift per day
 
-    // Helper: get group for a member
-    const getGroup = m => (typeof m === "object" && m.group) ? m.group : null;
+    // Helper: get group for a member (works for both object and string)
+    const getGroup = m => {
+      if (typeof m === "object" && m.group) return m.group;
+      // If m is a string, find the member object in the members array
+      if (typeof m === "string") {
+        const found = members.find(mem => mem.name === m);
+        return found && found.group ? found.group : null;
+      }
+      return null;
+    };
 
     // Helper: case-insensitive group compare
     const isBackendPlus = m => (getGroup(m) || "").toLowerCase() === "backend+";
