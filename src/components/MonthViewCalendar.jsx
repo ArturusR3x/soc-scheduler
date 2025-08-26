@@ -78,10 +78,13 @@ export default function MonthViewCalendar({
       let group = null;
       if (typeof m === "object" && m.group) group = m.group;
       else if (typeof m === "string") {
-        const found = members.find(mem => mem.name === m);
+        // Fix: match by name or by email (for robustness)
+        const found = members.find(mem =>
+          (mem.name && mem.name === m) ||
+          (mem.email && mem.email === m)
+        );
         group = found && found.group ? found.group : null;
       }
-      // Debug log for group extraction
       console.log("[getGroup] member:", m, "group:", group);
       return group;
     };
