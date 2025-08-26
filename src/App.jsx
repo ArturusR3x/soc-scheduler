@@ -162,7 +162,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#181e29] via-[#233056] to-[#1e2a47] flex flex-col">
-      <div className="w-full bg-transparent p-8 space-y-8">
+      <div className="w-full bg-white/10 rounded-2xl shadow-2xl p-8 space-y-8">
         {/* Show logged-in user and group */}
         <div className="flex justify-between items-center mb-2">
           <span className="text-blue-200 font-semibold">
