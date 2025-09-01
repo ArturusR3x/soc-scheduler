@@ -181,11 +181,18 @@ export default function MonthViewCalendar({
         if (backendPlus.length === 1 && candidates.length === 1) {
           candidates = [];
         }
-        // --- NEW RULE: Prefer members who did NOT have this shift yesterday ---
-        candidates = [
-          ...candidates.filter(m => lastShift[m] !== shiftNum),
-          ...candidates.filter(m => lastShift[m] === shiftNum)
-        ];
+        // --- Prefer members who did NOT have this shift yesterday ---
+        // If there are enough candidates who did NOT have this shift yesterday, use only them
+        const notPrevShift = candidates.filter(m => lastShift[m] !== shiftNum);
+        if (notPrevShift.length >= 2) {
+          candidates = notPrevShift;
+        } else {
+          // Otherwise, allow all candidates (to avoid empty shifts)
+          candidates = [
+            ...notPrevShift,
+            ...candidates.filter(m => lastShift[m] === shiftNum)
+          ];
+        }
         return candidates;
       }
       // --- End new rules logic ---
