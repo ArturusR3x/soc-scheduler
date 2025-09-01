@@ -176,12 +176,16 @@ export default function MonthViewCalendar({
             candidates = candidates.filter(m => !isSouth(m)).concat(keep);
           }
         }
-        // --- NEW RULE: BACKEND+ cannot be alone at any shift ---
+        // BACKEND+ cannot be alone at any shift
         const backendPlus = candidates.filter(isBackendPlus);
         if (backendPlus.length === 1 && candidates.length === 1) {
-          // Remove the lone BACKEND+ from candidates
           candidates = [];
         }
+        // --- NEW RULE: Prefer members who did NOT have this shift yesterday ---
+        candidates = [
+          ...candidates.filter(m => lastShift[m] !== shiftNum),
+          ...candidates.filter(m => lastShift[m] === shiftNum)
+        ];
         return candidates;
       }
       // --- End new rules logic ---
