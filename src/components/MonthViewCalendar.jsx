@@ -244,8 +244,9 @@ export default function MonthViewCalendar({
         lastShift[m] = 3;
       });
       shiftAssignments["off"].forEach(m => {
-        newSchedule[dateKey][m] = "off";
-        lastShift[m] = "off";
+        // FIX: Use 0 for off day to avoid DB integer error
+        newSchedule[dateKey][m] = 0;
+        lastShift[m] = 0;
       });
     }
 
