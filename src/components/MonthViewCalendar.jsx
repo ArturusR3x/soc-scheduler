@@ -164,46 +164,52 @@ export default function MonthViewCalendar({
         memberNextShift[m] = shiftNum;
       }
 
-      // --- Apply rules to each shift ---
-      // Shift 1: Exclude BACKEND+, only one SOUTH, north can be together
-      shiftAssignments[1] = shiftAssignments[1].filter(m => !isBackendPlus(m));
+      // --- Prioritize 2 people at shift 1 (north/south only), shift 2 & 3 can have backend+ ---
+      // Shift 1: Only north/south, max 2 people, only one south
+      shiftAssignments[1] = shiftAssignments[1].filter(m => {
+        const group = getGroup(m);
+        return group && (group.toLowerCase() === "north" || group.toLowerCase() === "south");
+      });
       const south1 = shiftAssignments[1].filter(isSouth);
       if (south1.length > 1) {
         const keep = shuffle(south1).slice(0, 1);
         shiftAssignments[1] = shiftAssignments[1].filter(m => !isSouth(m)).concat(keep);
       }
+      shiftAssignments[1] = shuffle(shiftAssignments[1]).slice(0, 2);
 
-      // Shift 2: Only one BACKEND+ allowed
+      // Shift 2: Only one BACKEND+ allowed, max 2 people
       const backendPlus2 = shiftAssignments[2].filter(isBackendPlus);
       if (backendPlus2.length > 1) {
         const keep = shuffle(backendPlus2).slice(0, 1);
         shiftAssignments[2] = shiftAssignments[2].filter(m => !isBackendPlus(m)).concat(keep);
       }
+      shiftAssignments[2] = shuffle(shiftAssignments[2]).slice(0, 2);
 
-      // Shift 3: Only one BACKEND+ allowed
+      // Shift 3: Only one BACKEND+ allowed, max 2 people
       const backendPlus3 = shiftAssignments[3].filter(isBackendPlus);
       if (backendPlus3.length > 1) {
         const keep = shuffle(backendPlus3).slice(0, 1);
         shiftAssignments[3] = shiftAssignments[3].filter(m => !isBackendPlus(m)).concat(keep);
       }
+      shiftAssignments[3] = shuffle(shiftAssignments[3]).slice(0, 2);
 
       // BACKEND+ cannot be alone at any shift
-      if (shiftAssignments[1].length === 1 && isBackendPlus(shiftAssignments[1][0])) shiftAssignments[1] = [];
       if (shiftAssignments[2].length === 1 && isBackendPlus(shiftAssignments[2][0])) shiftAssignments[2] = [];
       if (shiftAssignments[3].length === 1 && isBackendPlus(shiftAssignments[3][0])) shiftAssignments[3] = [];
 
-      // Limit each shift to 2 people maximum
-      shiftAssignments[1] = shuffle(shiftAssignments[1]).slice(0, 2);
-      shiftAssignments[2] = shuffle(shiftAssignments[2]).slice(0, 2);
-      shiftAssignments[3] = shuffle(shiftAssignments[3]).slice(0, 2);
-
-      // --- FIX: Ensure every shift is filled if possible ---
-      // If a shift is empty, move someone from 'off' to fill it (prioritize filling empty shifts)
+      // --- Ensure every shift is filled if possible ---
       for (let shiftNum of [1, 2, 3]) {
         if (shiftAssignments[shiftNum].length === 0 && shiftAssignments["off"].length > 0) {
-          // Move one person from off to this shift
           const person = shiftAssignments["off"].shift();
-          shiftAssignments[shiftNum].push(person);
+          // For shift 1, only allow north/south
+          if (shiftNum === 1) {
+            const group = getGroup(person);
+            if (group && (group.toLowerCase() === "north" || group.toLowerCase() === "south")) {
+              shiftAssignments[shiftNum].push(person);
+            }
+          } else {
+            shiftAssignments[shiftNum].push(person);
+          }
         }
       }
 
