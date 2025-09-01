@@ -176,7 +176,12 @@ export default function MonthViewCalendar({
             candidates = candidates.filter(m => !isSouth(m)).concat(keep);
           }
         }
-        // Rule 1: north can be together at shift 1 (no restriction)
+        // --- NEW RULE: BACKEND+ cannot be alone at any shift ---
+        const backendPlus = candidates.filter(isBackendPlus);
+        if (backendPlus.length === 1 && candidates.length === 1) {
+          // Remove the lone BACKEND+ from candidates
+          candidates = [];
+        }
         return candidates;
       }
       // --- End new rules logic ---
