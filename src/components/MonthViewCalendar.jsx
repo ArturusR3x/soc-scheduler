@@ -107,7 +107,7 @@ export default function MonthViewCalendar({
     const lastShift = {};
     filteredMembers.forEach(m => { lastShift[m] = null; });
 
-    // --- Fix: Initialize lastShift for first day using previous day in schedule ---
+    // --- Fix: Always initialize lastShift for first day using previous day, even if previous day is in previous month ---
     if (days.length > 0) {
       const firstDay = days[0];
       const prevDay = addDays(firstDay, -1);
@@ -115,7 +115,7 @@ export default function MonthViewCalendar({
       if (schedule[prevKey]) {
         filteredMembers.forEach(m => {
           const prevShift = schedule[prevKey][m];
-          if ([1,2,3,"off"].includes(prevShift)) {
+          if ([1,2,3,0].includes(prevShift)) {
             lastShift[m] = prevShift;
           } else {
             lastShift[m] = null;
@@ -396,5 +396,6 @@ export default function MonthViewCalendar({
     </div>
   );
 }
+
 
 
