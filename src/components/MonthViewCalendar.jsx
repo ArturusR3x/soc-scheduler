@@ -158,14 +158,13 @@ export default function MonthViewCalendar({
       // Assign shifts in cycle, always fill 3 shifts per day
       for (let i = 0; i < membersToAssign.length; i++) {
         const m = membersToAssign[i];
-        // Calculate shift based on dayIdx and member index to rotate
         const shiftIdx = (dayIdx + i) % 4;
         const shiftNum = cycleOrder[shiftIdx];
         shiftAssignments[shiftNum].push(m);
         memberNextShift[m] = shiftNum;
       }
 
-      // Now apply rules to each shift
+      // --- Apply rules to each shift ---
       // Shift 1: Exclude BACKEND+, only one SOUTH, north can be together
       shiftAssignments[1] = shiftAssignments[1].filter(m => !isBackendPlus(m));
       const south1 = shiftAssignments[1].filter(isSouth);
@@ -192,6 +191,11 @@ export default function MonthViewCalendar({
       if (shiftAssignments[1].length === 1 && isBackendPlus(shiftAssignments[1][0])) shiftAssignments[1] = [];
       if (shiftAssignments[2].length === 1 && isBackendPlus(shiftAssignments[2][0])) shiftAssignments[2] = [];
       if (shiftAssignments[3].length === 1 && isBackendPlus(shiftAssignments[3][0])) shiftAssignments[3] = [];
+
+      // Limit each shift to 2 people maximum
+      shiftAssignments[1] = shuffle(shiftAssignments[1]).slice(0, 2);
+      shiftAssignments[2] = shuffle(shiftAssignments[2]).slice(0, 2);
+      shiftAssignments[3] = shuffle(shiftAssignments[3]).slice(0, 2);
 
       // Fill schedule for the day
       shiftAssignments[1].forEach(m => {
