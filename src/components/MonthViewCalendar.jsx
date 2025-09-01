@@ -175,6 +175,23 @@ export default function MonthViewCalendar({
         const keep = shuffle(south1).slice(0, 1);
         shiftAssignments[1] = shiftAssignments[1].filter(m => !isSouth(m)).concat(keep);
       }
+      // --- FIX: If after south rule, shift 1 has only 1 member, try to add another north if available ---
+      if (shiftAssignments[1].length === 1) {
+        const availableNorth = shiftAssignments[1][0] && isSouth(shiftAssignments[1][0])
+          ? shiftAssignments[1].concat(
+              shiftAssignments[1].filter(m => getGroup(m).toLowerCase() === "north")
+            )
+          : shiftAssignments[1];
+        // Find another north from off shift
+        if (availableNorth.length === 1 && shiftAssignments["off"].length > 0) {
+          const extraNorth = shiftAssignments["off"].find(m => getGroup(m).toLowerCase() === "north");
+          if (extraNorth) {
+            shiftAssignments[1].push(extraNorth);
+            // Remove from off
+            shiftAssignments["off"] = shiftAssignments["off"].filter(m => m !== extraNorth);
+          }
+        }
+      }
       shiftAssignments[1] = shuffle(shiftAssignments[1]).slice(0, 2);
 
       // Shift 2: Only one BACKEND+ allowed, max 2 people
