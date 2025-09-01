@@ -107,7 +107,7 @@ export default function MonthViewCalendar({
     const lastShift = {};
     filteredMembers.forEach(m => { lastShift[m] = null; });
 
-    // --- Fix: If previous day is in previous month, set lastShift to "off" for members who had shift 3 ---
+    // --- Fix: Initialize lastShift for first day using previous day in schedule ---
     if (days.length > 0) {
       const firstDay = days[0];
       const prevDay = addDays(firstDay, -1);
@@ -115,17 +115,8 @@ export default function MonthViewCalendar({
       if (schedule[prevKey]) {
         filteredMembers.forEach(m => {
           const prevShift = schedule[prevKey][m];
-          if ([1,2,3,0].includes(prevShift)) {
-            // If previous day is in previous month and prevShift is 3, set to off (0)
-            if (
-              (prevDay.getMonth() !== monthDate.getMonth() ||
-               prevDay.getFullYear() !== monthDate.getFullYear()) &&
-              prevShift === 3
-            ) {
-              lastShift[m] = 0;
-            } else {
-              lastShift[m] = prevShift;
-            }
+          if ([1,2,3,"off"].includes(prevShift)) {
+            lastShift[m] = prevShift;
           } else {
             lastShift[m] = null;
           }
@@ -184,23 +175,6 @@ export default function MonthViewCalendar({
         const keep = shuffle(south1).slice(0, 1);
         shiftAssignments[1] = shiftAssignments[1].filter(m => !isSouth(m)).concat(keep);
       }
-      // --- FIX: If after south rule, shift 1 has only 1 member, try to add another north if available ---
-      if (shiftAssignments[1].length === 1) {
-        const availableNorth = shiftAssignments[1][0] && isSouth(shiftAssignments[1][0])
-          ? shiftAssignments[1].concat(
-              shiftAssignments[1].filter(m => getGroup(m).toLowerCase() === "north")
-            )
-          : shiftAssignments[1];
-        // Find another north from off shift
-        if (availableNorth.length === 1 && shiftAssignments["off"].length > 0) {
-          const extraNorth = shiftAssignments["off"].find(m => getGroup(m).toLowerCase() === "north");
-          if (extraNorth) {
-            shiftAssignments[1].push(extraNorth);
-            // Remove from off
-            shiftAssignments["off"] = shiftAssignments["off"].filter(m => m !== extraNorth);
-          }
-        }
-      }
       shiftAssignments[1] = shuffle(shiftAssignments[1]).slice(0, 2);
 
       // Shift 2: Only one BACKEND+ allowed, max 2 people
@@ -253,9 +227,8 @@ export default function MonthViewCalendar({
         lastShift[m] = 3;
       });
       shiftAssignments["off"].forEach(m => {
-        // FIX: Use 0 for off day to avoid DB integer error
-        newSchedule[dateKey][m] = 0;
-        lastShift[m] = 0;
+        newSchedule[dateKey][m] = "off";
+        lastShift[m] = "off";
       });
     }
 
@@ -405,6 +378,5 @@ export default function MonthViewCalendar({
     </div>
   );
 }
-
 
 
