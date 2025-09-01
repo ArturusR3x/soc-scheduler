@@ -107,7 +107,7 @@ export default function MonthViewCalendar({
     const lastShift = {};
     filteredMembers.forEach(m => { lastShift[m] = null; });
 
-    // --- Fix: Always initialize lastShift for first day using previous day, even if previous day is in previous month ---
+    // --- Fix: If previous day is in previous month, set lastShift to "off" for members who had shift 3 ---
     if (days.length > 0) {
       const firstDay = days[0];
       const prevDay = addDays(firstDay, -1);
@@ -116,7 +116,16 @@ export default function MonthViewCalendar({
         filteredMembers.forEach(m => {
           const prevShift = schedule[prevKey][m];
           if ([1,2,3,0].includes(prevShift)) {
-            lastShift[m] = prevShift;
+            // If previous day is in previous month and prevShift is 3, set to off (0)
+            if (
+              (prevDay.getMonth() !== monthDate.getMonth() ||
+               prevDay.getFullYear() !== monthDate.getFullYear()) &&
+              prevShift === 3
+            ) {
+              lastShift[m] = 0;
+            } else {
+              lastShift[m] = prevShift;
+            }
           } else {
             lastShift[m] = null;
           }
@@ -373,6 +382,29 @@ export default function MonthViewCalendar({
                             className={`w-full rounded-lg px-2 py-1 text-xs text-white font-semibold shadow-lg flex flex-row items-center gap-2 mb-1 ${shiftColors[shiftNum]}`}
                             title={`Shift ${shiftNum}: ${row.join(', ')}`}
                             style={{ minWidth: 0, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.18), 0 1.5px 0 #222' }}
+                          >
+                            {row.map(person => (
+                              <span key={person} className="block font-bold text-[0.7rem] leading-tight flex-1 truncate">{person}</span>
+                            ))}
+                            {row.length === 1 && <span className="flex-1" />} {/* fill space if only 1 */}
+                            <span className="block text-[0.65rem] ml-2">Shift {shiftNum}</span>
+                          </div>
+                        ));
+                      });
+                    })()}
+                  </div>
+                </div>
+              );
+              day = addDays(day, 1);
+              colIdx++;
+            }
+            return calendarCells;
+          })()}
+        </div>
+      </div>
+    </div>
+  );
+}
                           >
                             {row.map(person => (
                               <span key={person} className="block font-bold text-[0.7rem] leading-tight flex-1 truncate">{person}</span>
