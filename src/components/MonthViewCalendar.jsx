@@ -127,15 +127,18 @@ export default function MonthViewCalendar({
 
     // Build schedule day by day
     const newSchedule = {};
+    // Shuffle members once per month for fairness
+    const shuffledMembers = shuffle([...filteredMembers]);
+
     for (let dayIdx = 0; dayIdx < days.length; dayIdx++) {
       const day = days[dayIdx];
       const dateKey = format(day, "yyyy-MM-dd");
       newSchedule[dateKey] = {};
 
       // --- Prioritize cycling shift: s1->s2->s3->off ---
-      // Assign each member their next shift in the cycle
+      // Assign each member their next shift in the cycle, using shuffled order
       let memberNextShift = {};
-      filteredMembers.forEach(m => {
+      shuffledMembers.forEach(m => {
         let prevShift = lastShift[m];
         let nextShift;
         if (prevShift === null || prevShift === "off") nextShift = 1;
@@ -149,7 +152,7 @@ export default function MonthViewCalendar({
       // --- Ensure every day has 3 shifts filled ---
       // Distribute members evenly into 3 shifts, cycling their assignment
       let cycleOrder = [1, 2, 3, "off"];
-      let membersToAssign = [...filteredMembers];
+      let membersToAssign = [...shuffledMembers];
       let shiftAssignments = { 1: [], 2: [], 3: [], off: [] };
 
       // Assign shifts in cycle, always fill 3 shifts per day
