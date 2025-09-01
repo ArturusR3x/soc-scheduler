@@ -405,29 +405,6 @@ export default function MonthViewCalendar({
     </div>
   );
 }
-                          >
-                            {row.map(person => (
-                              <span key={person} className="block font-bold text-[0.7rem] leading-tight flex-1 truncate">{person}</span>
-                            ))}
-                            {row.length === 1 && <span className="flex-1" />} {/* fill space if only 1 */}
-                            <span className="block text-[0.65rem] ml-2">Shift {shiftNum}</span>
-                          </div>
-                        ));
-                      });
-                    })()}
-                  </div>
-                </div>
-              );
-              day = addDays(day, 1);
-              colIdx++;
-            }
-            return calendarCells;
-          })()}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 
