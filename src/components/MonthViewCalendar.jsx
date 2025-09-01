@@ -197,6 +197,16 @@ export default function MonthViewCalendar({
       shiftAssignments[2] = shuffle(shiftAssignments[2]).slice(0, 2);
       shiftAssignments[3] = shuffle(shiftAssignments[3]).slice(0, 2);
 
+      // --- FIX: Ensure every shift is filled if possible ---
+      // If a shift is empty, move someone from 'off' to fill it (prioritize filling empty shifts)
+      for (let shiftNum of [1, 2, 3]) {
+        if (shiftAssignments[shiftNum].length === 0 && shiftAssignments["off"].length > 0) {
+          // Move one person from off to this shift
+          const person = shiftAssignments["off"].shift();
+          shiftAssignments[shiftNum].push(person);
+        }
+      }
+
       // Fill schedule for the day
       shiftAssignments[1].forEach(m => {
         newSchedule[dateKey][m] = 1;
